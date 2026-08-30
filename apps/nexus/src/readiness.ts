@@ -10,6 +10,9 @@ export type NexusReadinessRoute = (typeof NEXUS_READINESS_ROUTES)[number];
 export type NexusReadinessConfig = {
   canonicalOrigin: string;
   goalState?: GoalState;
+  officeProRuntime?: {
+    providerOrigin: string;
+  };
 };
 
 export type NexusStructuredData = {
@@ -156,6 +159,7 @@ function renderHtml(
   origin: string,
   structuredData: NexusStructuredData,
   goalState: GoalState,
+  officeProRuntime?: { providerOrigin: string },
 ): string {
   const structuredDataJson = JSON.stringify(structuredData).replaceAll('<', '\\u003c');
 
@@ -185,11 +189,21 @@ function renderHtml(
     </div>
   </header>
   <main id="main-content" tabindex="-1">
-    ${renderMissionDashboard(goalState)}
+    ${renderMissionDashboard(
+      goalState,
+      officeProRuntime
+        ? {
+            providerOrigin: officeProRuntime.providerOrigin,
+            phase: 'READY',
+            message: 'Waiting for the independent OfficePro origin to report its WebMCP capability.',
+          }
+        : undefined,
+    )}
   </main>
   <footer>
     <div class="site-footer">NEXUS is a deterministic proof of concept for intent continuity across independent agent-ready providers.</div>
   </footer>
+  ${officeProRuntime ? '<script type="module" src="/officepro-runtime-client.js"></script>' : ''}
 </body>
 </html>
 `;
@@ -201,6 +215,9 @@ export function createNexusReadinessSurfaces(
   const canonicalOrigin = normalizeCanonicalOrigin(config.canonicalOrigin);
   const structuredData = createStructuredData(canonicalOrigin);
   const goalState = config.goalState ?? createInitialHeroGoalState();
+  const officeProRuntime = config.officeProRuntime
+    ? { providerOrigin: normalizeCanonicalOrigin(config.officeProRuntime.providerOrigin) }
+    : undefined;
 
   return {
     canonicalOrigin,
@@ -209,7 +226,7 @@ export function createNexusReadinessSurfaces(
     sitemapXml: renderSitemapXml(canonicalOrigin),
     llmsTxt: renderLlmsTxt(canonicalOrigin),
     structuredData,
-    html: renderHtml(canonicalOrigin, structuredData, goalState),
+    html: renderHtml(canonicalOrigin, structuredData, goalState, officeProRuntime),
   };
 }
 

@@ -54,6 +54,19 @@ The NEXUS mission dashboard should show:
 - approval state;
 - Agent Activity Timeline.
 
+## Implemented first segment: OfficePro
+
+The live dashboard now begins where the user deliberately chose OfficePro. **Ask
+OfficePro** runs the four provider-owned furniture tools, visibly records their outcomes,
+and moves only desks and chairs through the canonical states to `FULFILLED`. The checkpoint
+is deterministic: 40% complete, MXN 155,000 used, MXN 345,000 remaining, and delivery on
+2026-09-20 before the mission deadline.
+
+Computers, internet, and security remain `PENDING`. The next-step control asks whether to
+continue through NEXUS, but it deliberately does not authorize or execute a handoff. This
+keeps the Issue #19 demo segment in Brand Mode and makes the human-controlled transition
+to the next story beat explicit.
+
 ## Scope budget
 
 Prioritize roughly in this order:

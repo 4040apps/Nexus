@@ -23,13 +23,28 @@ export {
   renderAgentActivityTimeline,
   renderGoalGraph,
   renderMissionDashboard,
+  renderOfficeProRuntime,
   renderMissionProgress,
   renderMissionSummary,
   renderRequirementCard,
   renderRequirementStatus,
 } from './dashboard.js';
 
-export type { MissionMode } from './dashboard.js';
+export type { MissionMode, OfficeProRuntimeView } from './dashboard.js';
+
+export {
+  OFFICEPRO_BRAND_TOOL_NAMES,
+  OfficeProBrandModeError,
+  runOfficeProBrandMode,
+} from './officepro-brand-mode.js';
+
+export type {
+  OfficeProBrandModeErrorCode,
+  OfficeProBrandModeOptions,
+  OfficeProBrandModeResult,
+  OfficeProBrandToolName,
+  OfficeProToolInvoker,
+} from './officepro-brand-mode.js';
 
 export {
   HERO_DASHBOARD_STATE_NAMES,

@@ -161,6 +161,23 @@ export const officeProProvider = defineAgentReadyProvider(
   ],
 );
 
+export const officeProBrandModeProvider = defineAgentReadyProvider(
+  {
+    id: 'officepro',
+    name: 'OfficePro',
+    description: 'Furniture provider for the NEXUS Guadalajara office mission.',
+    origin: 'https://officepro.example',
+    categories: ['furniture'],
+    serviceAreas: ['Guadalajara'],
+  },
+  [
+    officeProAnalyzeOfficeRequirement,
+    officeProSearchFurniture,
+    officeProBuildFurniturePackage,
+    officeProCheckDelivery,
+  ],
+);
+
 export const officePro = getProviderDiscoveryMetadata(officeProProvider);
 
 function officeRequirementSchema() {
