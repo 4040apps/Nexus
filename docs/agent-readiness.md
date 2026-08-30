@@ -36,6 +36,17 @@ Begin external scanning early enough to fix structural issues before the final d
 
 Demo providers should share an agent-ready provider template so their semantics, accessibility, WebMCP registration and structured errors are consistent.
 
+The provider template can generate maintained `robots.txt`, `sitemap.xml`, `llms.txt`
+and Schema.org organization metadata from a provider's validated canonical origin,
+description, service areas, categories and real WebMCP tools. It refuses to construct an
+agent-ready provider with an invalid origin or no tools, so these helpers cannot produce
+empty placeholder surfaces.
+
+Its framework-independent page renderer supplies a semantic header/main/footer outline,
+one visible section describing the real tools, a skip link, labelled headings, canonical
+metadata, JSON-LD and an accessible live status region. Provider apps may implement the
+same baseline in their eventual UI framework rather than using the string renderer.
+
 If the UI shows provider readiness scores:
 
 - `external` means a real third-party scan of that deployed origin;
