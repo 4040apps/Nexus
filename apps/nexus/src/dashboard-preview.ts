@@ -42,13 +42,14 @@ const server = createServer(async (request, response) => {
   response.writeHead(readinessResponse.status, {
     ...readinessResponse.headers,
     'cache-control': 'no-store',
+    'origin-agent-cluster': '?1',
   });
   response.end(readinessResponse.body);
 });
 
 server.listen(port, '127.0.0.1', () => {
   process.stdout.write(`NEXUS Mission Dashboard preview: ${origin}\n`);
-  process.stdout.write('Live OfficePro Brand Mode: open the URL without a ?state fixture.\n');
+  process.stdout.write('Live OfficePro → handoff → TechSupply flow: open without a ?state fixture.\n');
   process.stdout.write(`States: ${HERO_DASHBOARD_STATE_NAMES.join(', ')}\n`);
 });
 

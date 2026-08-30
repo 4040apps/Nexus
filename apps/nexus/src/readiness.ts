@@ -125,6 +125,7 @@ function renderLlmsTxt(origin: string): string {
 - Independent providers register genuine browser tools with document.modelContext.
 - The authorized consumer invokes those tools on the provider origin; NEXUS does not proxy provider-owned catalog, pricing, stock, availability, or constraints.
 - Tool exposure follows the validated fromOrigins, exposedTo, and iframe allow="tools" browser permission model documented by this repository.
+- After an executed handoff, TechSupply fulfills computers through provider-owned read and planning tools without invoking its commitment-class quote tool.
 
 ## Discovery
 

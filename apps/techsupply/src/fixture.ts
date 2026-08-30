@@ -96,7 +96,7 @@ export const techSupplyProvider = defineAgentReadyProvider(
     name: 'TechSupply',
     description: 'Computer provider for the NEXUS Guadalajara office mission.',
     origin: 'https://techsupply.example',
-    categories: ['computers'],
+    categories: ['computer'],
     serviceAreas: ['Guadalajara'],
   },
   [

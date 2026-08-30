@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "pnpm --parallel --filter './apps/**' dev",
     "spike:webmcp": "pnpm --filter @nexus/webmcp-cross-origin-spike build && pnpm --filter @nexus/webmcp-cross-origin-spike start",
-    "demo:officepro": "pnpm --filter @nexus/app-nexus build && pnpm --filter @nexus/app-officepro build && pnpm --parallel --filter @nexus/app-nexus --filter @nexus/app-officepro preview:brand",
+    "demo:officepro": "pnpm --filter @nexus/app-nexus build && pnpm --filter @nexus/app-officepro build && pnpm --filter @nexus/app-techsupply build && pnpm --parallel --filter @nexus/app-nexus --filter @nexus/app-officepro --filter @nexus/app-techsupply preview:brand",
+    "demo:hero": "pnpm demo:officepro",
     "lint": "eslint .",
     "typecheck": "pnpm --recursive typecheck",
     "test": "vitest run",

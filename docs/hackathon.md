@@ -54,7 +54,7 @@ The NEXUS mission dashboard should show:
 - approval state;
 - Agent Activity Timeline.
 
-## Implemented first segments: OfficePro and Intent Handoff
+## Implemented live segments: OfficePro, Intent Handoff, and TechSupply
 
 The live dashboard now begins where the user deliberately chose OfficePro. **Ask
 OfficePro** runs the four provider-owned furniture tools, visibly records their outcomes,
@@ -66,7 +66,11 @@ Computers, internet, and security remain `PENDING`. **Continue through NEXUS** p
 minimized Intent Handoff and presents an explicit authorization decision. **Stay with
 OfficePro** leaves Brand Mode active. **Authorize NEXUS to continue** records human consent,
 executes the handoff, and visibly enables Broker Mode while progress and budget remain
-unchanged. Provider discovery and TechSupply fulfillment begin in the next issue.
+unchanged. **Find computers** then discovers TechSupply from thin metadata and invokes its
+three provider-owned read/plan tools. Computers move through every canonical state to
+`FULFILLED`, producing the next checkpoint: 60% complete, MXN 345,000 used, MXN 155,000
+remaining, and delivery on 2026-09-22. Internet and security remain `PENDING`; internet
+routing and the deliberate FiberMX blocker begin in Issue #22.
 
 ## Scope budget
 

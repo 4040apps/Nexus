@@ -168,7 +168,7 @@ Computers, internet, and security remain unassigned and `PENDING`. The UI offers
 **Continue through NEXUS**. Selecting it now creates a `PROPOSED` Intent Handoff and shows
 the minimized payload before asking for explicit human authorization. Authorization and
 execution append the canonical audit events; only the executed handoff changes the visible
-mode to Broker Mode. No provider discovery or routing occurs in this segment.
+mode to Broker Mode. TechSupply routing begins only from that executed state.
 
 ## Intent Handoff contract
 
@@ -238,8 +238,38 @@ Continue through NEXUS
 The payload contains only computers, internet, and security plus Guadalajara, the mission
 deadline, MXN 345,000 remaining, and the currency. It excludes fulfilled furniture,
 employee count, provider assignments, catalog/item/package identifiers, stock, unit prices,
-complete provider results, and activity history. Issue #20 stops immediately after the
-mode change; TechSupply and all other providers remain untouched.
+complete provider results, and activity history.
+
+### TechSupply Broker Mode runtime
+
+Issue #21 continues the same live Goal State from the executed handoff. NEXUS selects
+TechSupply using only the thin `computer` category, Guadalajara service area, origin, and
+three capability names. Before any invocation it requires
+`canBeginBrokerRouting(handoff) === true`; a proposed or merely authorized handoff fails
+closed.
+
+```text
+NEXUS consumer/dashboard : http://localhost:4400
+             | iframe allow="tools"
+             v
+TechSupply provider      : http://localhost:4600
+```
+
+TechSupply registers `search_computers`, `check_inventory`, and
+`build_computer_package` with `document.modelContext` and exposes them only to NEXUS. The
+consumer discovers them with `getTools({ fromOrigins: ['http://localhost:4600'] })` and
+invokes them with `executeTool()`. If WebMCP is unavailable, the visibly labelled normal
+TechSupply page invokes the same provider-owned definitions. The commitment-class
+`request_quote` tool is not exposed or invoked by this segment.
+
+All search, inventory, package, quantity, price, currency, and deadline facts are validated
+before canonical Goal State changes are returned. Invalid facts throw a typed error and
+leave the caller's 40% post-handoff state unchanged. The successful path records
+`PENDING -> DISCOVERED -> MATCHED -> PROPOSED -> FULFILLED` for computers, then reaches
+60% with MXN 345,000 used / MXN 155,000 remaining. Goal State retains only the TechSupply
+assignment, MXN 190,000 mission cost, delivery summary, and audit events; item/package IDs,
+stock records, unit price, and complete results remain provider-owned. Internet and
+security stay unassigned and `PENDING`; Issue #22 begins internet routing.
 
 ## Registry contract
 
