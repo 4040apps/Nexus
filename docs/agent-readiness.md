@@ -25,7 +25,7 @@ deployment can serve the same deterministic artifacts at its configured canonica
 
 | Route | Content | Contract |
 | --- | --- | --- |
-| `/` | Accessible NEXUS shell with embedded JSON-LD | Semantic landmarks, one `h1`, ordered headings, skip link, keyboard focus, real discovery links |
+| `/` | Accessible NEXUS Mission Dashboard with embedded JSON-LD | Semantic landmarks, one `h1`, ordered headings, skip link, keyboard focus, canonical Goal State visualization, real discovery links |
 | `/robots.txt` | Crawler policy | Allows the public site and names the canonical sitemap |
 | `/sitemap.xml` | XML sitemap | Contains the canonical NEXUS home page and no unimplemented routes |
 | `/llms.txt` | AI-readable product and architecture guide | Explains Brand Mode, Broker Mode, Intent Handoff, approval, provider ownership, WebMCP, and real discovery endpoints |

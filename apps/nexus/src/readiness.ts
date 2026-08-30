@@ -9,6 +9,7 @@ export type NexusReadinessRoute = (typeof NEXUS_READINESS_ROUTES)[number];
 
 export type NexusReadinessConfig = {
   canonicalOrigin: string;
+  goalState?: GoalState;
 };
 
 export type NexusStructuredData = {
@@ -151,7 +152,11 @@ function createStructuredData(origin: string): NexusStructuredData {
   };
 }
 
-function renderHtml(origin: string, structuredData: NexusStructuredData): string {
+function renderHtml(
+  origin: string,
+  structuredData: NexusStructuredData,
+  goalState: GoalState,
+): string {
   const structuredDataJson = JSON.stringify(structuredData).replaceAll('<', '\\u003c');
 
   return `<!doctype html>
@@ -163,50 +168,27 @@ function renderHtml(origin: string, structuredData: NexusStructuredData): string
   <link rel="canonical" href="${origin}/">
   <title>NEXUS — Intent continuity across providers</title>
   <script type="application/ld+json">${structuredDataJson}</script>
-  <style>
-    :root { color-scheme: light; font-family: system-ui, sans-serif; line-height: 1.5; }
-    body { max-width: 72rem; margin: 0 auto; padding: 0 1.25rem 3rem; color: #172033; background: #fff; }
-    a { color: #064f9c; }
-    a:focus-visible { outline: 3px solid #8a4b00; outline-offset: 3px; }
-    .skip-link { position: absolute; left: -9999px; top: 0; padding: .75rem; background: #fff; }
-    .skip-link:focus { left: 1rem; }
-    header, main, footer { padding-block: 1.25rem; }
-    nav ul { display: flex; flex-wrap: wrap; gap: 1rem; padding: 0; list-style: none; }
-    .eyebrow { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-    section { margin-block: 2rem; }
-  </style>
+  <style>${MISSION_DASHBOARD_STYLES}</style>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
-    <p class="eyebrow">WebMCP-first intent continuity</p>
-    <nav aria-label="Machine-readable discovery">
-      <ul>
-        <li><a href="/robots.txt">Robots policy</a></li>
-        <li><a href="/sitemap.xml">Sitemap</a></li>
-        <li><a href="/llms.txt">AI-readable overview</a></li>
-      </ul>
-    </nav>
+    <div class="site-header">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">N</span><span>NEXUS</span></div>
+      <nav aria-label="Machine-readable discovery">
+        <ul>
+          <li><a href="/robots.txt">Robots policy</a></li>
+          <li><a href="/sitemap.xml">Sitemap</a></li>
+          <li><a href="/llms.txt">AI-readable overview</a></li>
+        </ul>
+      </nav>
+    </div>
   </header>
   <main id="main-content" tabindex="-1">
-    <h1>NEXUS keeps the mission moving</h1>
-    <p>Websites end. Human intentions do not. NEXUS carries only the remaining requirements and necessary constraints across independent providers.</p>
-    <section aria-labelledby="flow-heading">
-      <h2 id="flow-heading">The mission flow</h2>
-      <ol>
-        <li>Fulfill what the chosen provider can complete in Brand Mode.</li>
-        <li>Continue only after an explicit Intent Handoff starts Broker Mode.</li>
-        <li>Show provider failures, recovery, and rerouting in Goal State.</li>
-        <li>Pause for human approval before any commitment operation.</li>
-      </ol>
-    </section>
-    <section aria-labelledby="provider-heading">
-      <h2 id="provider-heading">Independent provider tools</h2>
-      <p>Providers own their catalog, pricing, stock, availability, and constraints. Authorized agents invoke genuine WebMCP tools at each provider origin; NEXUS does not hide providers behind a central REST proxy.</p>
-    </section>
+    ${renderMissionDashboard(goalState)}
   </main>
   <footer>
-    <p>NEXUS is a deterministic proof of concept for the Guadalajara office-opening mission.</p>
+    <div class="site-footer">NEXUS is a deterministic proof of concept for intent continuity across independent agent-ready providers.</div>
   </footer>
 </body>
 </html>
@@ -218,6 +200,7 @@ export function createNexusReadinessSurfaces(
 ): NexusReadinessSurfaces {
   const canonicalOrigin = normalizeCanonicalOrigin(config.canonicalOrigin);
   const structuredData = createStructuredData(canonicalOrigin);
+  const goalState = config.goalState ?? createInitialHeroGoalState();
 
   return {
     canonicalOrigin,
@@ -226,7 +209,7 @@ export function createNexusReadinessSurfaces(
     sitemapXml: renderSitemapXml(canonicalOrigin),
     llmsTxt: renderLlmsTxt(canonicalOrigin),
     structuredData,
-    html: renderHtml(canonicalOrigin, structuredData),
+    html: renderHtml(canonicalOrigin, structuredData, goalState),
   };
 }
 
@@ -314,7 +297,7 @@ export function validateNexusReadinessSurfaces(
 
   if (
     !surfaces.html.includes('<main id="main-content" tabindex="-1">') ||
-    !surfaces.html.includes('<h1>')
+    !/<h1(?:\s|>)/.test(surfaces.html)
   ) {
     errors.push('The NEXUS shell must include a labelled main landmark and level-one heading.');
   }
@@ -341,3 +324,7 @@ export function validateNexusReadinessSurfaces(
     errors,
   };
 }
+import type { GoalState } from '@nexus/goal-state';
+
+import { MISSION_DASHBOARD_STYLES, renderMissionDashboard } from './dashboard.js';
+import { createInitialHeroGoalState } from './dashboard-fixtures.js';

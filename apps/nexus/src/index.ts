@@ -17,6 +17,33 @@ export const NEXUS_CAPABILITIES = [
 ] as const;
 
 export {
+  MISSION_DASHBOARD_STYLES,
+  assertCanonicalStatusPresentation,
+  deriveMissionMode,
+  renderAgentActivityTimeline,
+  renderGoalGraph,
+  renderMissionDashboard,
+  renderMissionProgress,
+  renderMissionSummary,
+  renderRequirementCard,
+  renderRequirementStatus,
+} from './dashboard.js';
+
+export type { MissionMode } from './dashboard.js';
+
+export {
+  HERO_DASHBOARD_STATE_NAMES,
+  HERO_MISSION,
+  createHeroDashboardStates,
+  createInitialHeroGoalState,
+} from './dashboard-fixtures.js';
+
+export type {
+  HeroDashboardStateName,
+  HeroDashboardStates,
+} from './dashboard-fixtures.js';
+
+export {
   NEXUS_READINESS_ROUTES,
   createNexusReadinessSurfaces,
   getNexusReadinessResponse,
