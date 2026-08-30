@@ -306,6 +306,29 @@ Those remain behind injected provider services. The included development example
 a real `check_availability` WebMCP tool whose availability lookup is implemented by the
 example provider service.
 
+## OfficePro Brand Mode reproduction
+
+Issue #19 applies the validated cross-origin model to the first live hero segment. Run:
+
+```bash
+pnpm demo:officepro
+```
+
+Then open `http://localhost:4400` and select **Ask OfficePro**. The provider at
+`http://localhost:4500` registers four genuine tools through `document.modelContext` and
+exposes them only to the NEXUS origin. For genuine cross-origin discovery/invocation,
+launch Chrome 151+ with `--enable-features=WebMCP`, as documented in the Issue #6 setup.
+
+Expected enabled result: the dashboard reports **Genuine cross-origin WebMCP**, records all
+four tool names in canonical Goal State activity, fulfills desks/chairs, and reaches 40%
+with MXN 155,000 used. Expected unsupported result: the dashboard explicitly reports
+`document.modelContext` as unavailable and uses OfficePro's normal website message flow to
+invoke the same provider-owned definitions. This fallback is not represented as WebMCP.
+The embedded OfficePro page also has its own working **Check the OfficePro package** action.
+
+Neither path invokes the commitment-class `request_quote` tool, performs an Intent Handoff,
+or copies OfficePro catalog/stock records into NEXUS.
+
 ## Demo proof
 
 The final demo must make it obvious that provider capabilities are being exposed and invoked through WebMCP. The Agent Activity Timeline should show provider + tool + outcome, including the FiberMX deadline failure and the NetBusiness reroute.

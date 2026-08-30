@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 
 import {
@@ -14,13 +15,27 @@ const port = Number(process.env.NEXUS_DASHBOARD_PORT ?? 4400);
 const origin = `http://localhost:${port}`;
 const states = createHeroDashboardStates();
 
-const server = createServer((request, response) => {
+const server = createServer(async (request, response) => {
   const url = new URL(request.url ?? '/', origin);
+
+  if (url.pathname === '/officepro-runtime-client.js') {
+    const bundle = await readFile(new URL('./officepro-runtime-client.js', import.meta.url));
+    response.writeHead(200, {
+      'content-type': 'text/javascript; charset=utf-8',
+      'cache-control': 'no-store',
+    });
+    response.end(bundle);
+    return;
+  }
+
   const requestedState = url.searchParams.get('state');
   const stateName = isHeroDashboardStateName(requestedState) ? requestedState : 'initial';
   const surfaces = createNexusReadinessSurfaces({
     canonicalOrigin: origin,
     goalState: states[stateName],
+    ...(requestedState === null
+      ? { officeProRuntime: { providerOrigin: 'http://localhost:4500' } }
+      : {}),
   });
   const readinessResponse = getNexusReadinessResponse(url.pathname, surfaces);
 
@@ -33,6 +48,7 @@ const server = createServer((request, response) => {
 
 server.listen(port, '127.0.0.1', () => {
   process.stdout.write(`NEXUS Mission Dashboard preview: ${origin}\n`);
+  process.stdout.write('Live OfficePro Brand Mode: open the URL without a ?state fixture.\n');
   process.stdout.write(`States: ${HERO_DASHBOARD_STATE_NAMES.join(', ')}\n`);
 });
 

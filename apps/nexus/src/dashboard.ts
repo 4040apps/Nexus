@@ -8,6 +8,13 @@ import type {
 
 export type MissionMode = 'Brand Mode' | 'Broker Mode';
 
+export type OfficeProRuntimeView = {
+  providerOrigin: string;
+  phase: 'READY' | 'RUNNING' | 'COMPLETE' | 'ERROR';
+  message: string;
+  transport?: 'WEBMCP' | 'WEBSITE_FALLBACK';
+};
+
 type StatusPresentation = {
   label: string;
   symbol: string;
@@ -64,12 +71,52 @@ export function deriveMissionMode(goalState: GoalState): MissionMode | undefined
   return undefined;
 }
 
-export function renderMissionDashboard(goalState: GoalState): string {
+export function renderMissionDashboard(
+  goalState: GoalState,
+  officeProRuntime?: OfficeProRuntimeView,
+): string {
   return `<article class="mission-dashboard" aria-labelledby="mission-title">
   ${renderMissionSummary(goalState)}
+  ${officeProRuntime ? renderOfficeProRuntime(officeProRuntime) : ''}
   ${renderGoalGraph(goalState)}
   ${renderAgentActivityTimeline(goalState)}
 </article>`;
+}
+
+export function renderOfficeProRuntime(runtime: OfficeProRuntimeView): string {
+  const complete = runtime.phase === 'COMPLETE';
+  const busy = runtime.phase === 'RUNNING';
+  const transportLabel =
+    runtime.transport === 'WEBMCP'
+      ? 'Genuine cross-origin WebMCP'
+      : runtime.transport === 'WEBSITE_FALLBACK'
+        ? 'Normal provider website fallback'
+        : 'Detecting provider capability';
+
+  return `<section class="dashboard-section provider-runtime" aria-labelledby="officepro-heading">
+    <div class="provider-runtime__copy">
+      <p class="section-eyebrow">Brand Mode · deliberate provider</p>
+      <h2 id="officepro-heading">Ask OfficePro to fulfill furniture</h2>
+      <p>NEXUS requests only OfficePro’s exposed capabilities. Catalog, stock, pricing, packaging, and delivery rules stay on the independent provider origin.</p>
+      <p class="provider-runtime__status" role="status" aria-live="polite" data-officepro-status data-phase="${runtime.phase}">
+        <strong>${escapeHtml(transportLabel)}</strong>
+        <span>${escapeHtml(runtime.message)}</span>
+      </p>
+      ${
+        complete
+          ? `<div class="continuation-panel">
+              <p><strong>OfficePro completed what it could.</strong> 3 requirements remain: computers, internet, and security.</p>
+              <button type="button" data-continue-nexus>Continue through NEXUS</button>
+              <small>This offers the explicit handoff choice. It does not start Broker Mode in Issue #19.</small>
+            </div>`
+          : `<button class="primary-action" type="button" data-ask-officepro${busy ? ' disabled aria-busy="true"' : ''}>${busy ? 'OfficePro is working…' : 'Ask OfficePro'}</button>`
+      }
+    </div>
+    <div class="provider-runtime__origin">
+      <div><span>Independent provider origin</span><code>${escapeHtml(runtime.providerOrigin)}</code></div>
+      <iframe title="Independent OfficePro provider website" src="${escapeAttribute(runtime.providerOrigin)}" allow="tools"></iframe>
+    </div>
+  </section>`;
 }
 
 export function renderMissionSummary(goalState: GoalState): string {
@@ -211,7 +258,9 @@ function renderActivityEvent(event: ActivityEvent, goalState: GoalState): string
     'requirementId' in event
       ? goalState.requirements.find((item) => item.id === event.requirementId)
       : undefined;
-  const providerId = isHandoff ? event.sourceProviderId : event.providerId;
+  const providerId = isHandoff
+    ? event.sourceProviderId
+    : event.providerId ?? readString(event.details, 'providerId');
   const actor = event.action === 'REQUIREMENT_REROUTED' || isHandoff
     ? 'NEXUS'
     : providerId
@@ -528,6 +577,25 @@ export const MISSION_DASHBOARD_STYLES = `
   .budget-summary strong { display: block; margin-block: .28rem; font-size: 1.05rem; }
 
   .dashboard-section { padding: clamp(1.4rem, 3vw, 2.5rem); border: 1px solid var(--line); border-radius: 1.35rem; background: rgba(13, 25, 41, .86); }
+
+  .provider-runtime { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(18rem, .85fr); gap: 2rem; align-items: stretch; border-color: #466737; background: linear-gradient(130deg, rgba(24, 46, 37, .9), rgba(13, 25, 41, .92)); }
+  .provider-runtime h2 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.15rem); letter-spacing: -.035em; }
+  .provider-runtime__copy > p:not(.section-eyebrow):not(.provider-runtime__status) { color: #c4d2ca; line-height: 1.55; }
+  .provider-runtime__status { display: grid; gap: .22rem; margin: 1.25rem 0; padding: .9rem 1rem; border: 1px solid #4f6a5c; border-radius: .8rem; background: rgba(7, 20, 21, .58); }
+  .provider-runtime__status strong { color: #d9ffbf; font-size: .76rem; letter-spacing: .06em; text-transform: uppercase; }
+  .provider-runtime__status span { color: #c5d2cc; font-size: .88rem; line-height: 1.45; }
+  .provider-runtime__status[data-phase="ERROR"] { border-color: #9d4b57; background: rgba(68, 20, 29, .6); }
+  .provider-runtime__origin { overflow: hidden; display: grid; grid-template-rows: auto 1fr; min-height: 20rem; border: 1px solid #53675e; border-radius: 1rem; background: #f5f0e8; }
+  .provider-runtime__origin > div { display: grid; gap: .25rem; padding: .75rem 1rem; color: #cad6d0; background: #13251f; }
+  .provider-runtime__origin span { font-size: .66rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+  .provider-runtime__origin code { overflow-wrap: anywhere; color: #edffe3; font-size: .78rem; }
+  .provider-runtime iframe { width: 100%; min-height: 16rem; border: 0; background: #f5f0e8; }
+  .primary-action, .continuation-panel button { padding: .85rem 1.1rem; border: 1px solid #c7fa6d; border-radius: .65rem; color: #0a1608; background: var(--accent); font: inherit; font-weight: 900; cursor: pointer; }
+  .primary-action:focus-visible, .continuation-panel button:focus-visible { outline: 3px solid #d7f5ff; outline-offset: 3px; }
+  .primary-action:disabled { cursor: wait; opacity: .68; }
+  .continuation-panel { margin-top: 1.1rem; padding: 1rem; border: 1px solid #72934c; border-radius: .8rem; background: rgba(28, 56, 26, .68); }
+  .continuation-panel p { margin: 0 0 .8rem; line-height: 1.5; }
+  .continuation-panel small { display: block; margin-top: .65rem; color: #b8c9b2; }
   .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-bottom: 1.5rem; }
   .section-heading h2 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.15rem); letter-spacing: -.035em; }
   .section-heading > p { margin: 0; color: var(--muted); font-size: .83rem; font-weight: 700; }
@@ -607,6 +675,7 @@ export const MISSION_DASHBOARD_STYLES = `
     .mission-progress { grid-template-columns: auto minmax(15rem, 1fr); }
     .budget-summary { align-self: stretch; }
     .requirement-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .provider-runtime { grid-template-columns: 1fr; }
     .requirement-card--blocked, .requirement-card--requires-human { grid-column: span 2; }
   }
 

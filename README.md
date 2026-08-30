@@ -91,6 +91,20 @@ http://localhost:4400/?state=approval-required
 The dashboard renders canonical Goal State directly; the preview snapshots do not execute
 provider orchestration or commitment actions.
 
+Run the real OfficePro Brand Mode segment on two independent local origins:
+
+```bash
+pnpm demo:officepro
+```
+
+Open `http://localhost:4400` and choose **Ask OfficePro**. NEXUS embeds the independent
+OfficePro site from `http://localhost:4500` with `allow="tools"`. In Chrome 151+ launched
+with `--enable-features=WebMCP`, NEXUS discovers and invokes the four genuine provider
+tools using `document.modelContext`. In a browser without WebMCP, the UI explicitly labels
+the normal provider-website fallback; it does not claim WebMCP success. The result is the
+canonical 40% Goal State with MXN 155,000 used and an explicit, unexecuted continuation
+choice. Snapshot URLs remain available by adding `?state=<name>`.
+
 Run the Issue #6 cross-origin reproduction harness with `pnpm spike:webmcp`. It starts the
 authorized consumer on port 4100, the independent provider on port 4200, and an unauthorized
 negative control on port 4300. Exact browser requirements and validated results are in

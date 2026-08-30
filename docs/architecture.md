@@ -139,6 +139,35 @@ new activity action types or hard-coded static timeline markup.
 
 ![NEXUS Mission Dashboard showing the approval-required Goal State](assets/issue-18-mission-dashboard.jpg)
 
+### OfficePro Brand Mode runtime
+
+The first live hero segment uses two independent local origins:
+
+```text
+NEXUS consumer/dashboard : http://localhost:4400
+             | iframe allow="tools"
+             v
+OfficePro provider       : http://localhost:4500
+```
+
+OfficePro registers only `analyze_office_requirement`, `search_furniture`,
+`build_furniture_package`, and `check_delivery` for this segment. The WebMCP path uses
+`getTools({ fromOrigins: ['http://localhost:4500'] })` and `executeTool()` from the NEXUS
+origin; OfficePro registers with `exposedTo: ['http://localhost:4400']`. The normal provider
+page invokes the same provider-owned tool definitions when WebMCP is unavailable and the
+dashboard labels that transport as a website fallback. No provider REST proxy is added.
+
+NEXUS validates typed tool results before changing canonical Goal State. It persists only
+the assignments, per-requirement totals, delivery confirmation summary, and auditable
+activity needed by the mission. Catalog identifiers, unit prices, stock records, package
+identifiers, and the provider's complete result objects stay inside OfficePro.
+
+The successful runtime applies `PENDING -> DISCOVERED -> MATCHED -> PROPOSED -> FULFILLED`
+to desks and chairs, producing 40% progress and MXN 155,000 used / MXN 345,000 remaining.
+Computers, internet, and security remain unassigned and `PENDING`. The UI offers
+**Continue through NEXUS**, but Issue #19 records no handoff activity and never enters
+Broker Mode.
+
 ## Intent Handoff contract
 
 An Intent Handoff has three explicit lifecycle stages:
