@@ -12,7 +12,6 @@ export type HandoffRequirement = {
 
 export type HandoffConstraints = {
   city: string;
-  employees: number;
   deadline: string;
   remainingBudget: number;
   currency: 'MXN';

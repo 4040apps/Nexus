@@ -74,7 +74,6 @@ export function proposeIntentHandoff(
     remainingRequirements: eligibility.remainingRequirements.map(cloneHandoffRequirement),
     constraints: {
       city: goalState.constraints.city,
-      employees: goalState.constraints.employees,
       deadline: goalState.constraints.deadline,
       remainingBudget: goalState.budgetRemaining,
       currency: goalState.constraints.currency,
@@ -267,13 +266,11 @@ export function validateIntentHandoff(value: unknown): asserts value is IntentHa
     !isRecord(constraints) ||
     !hasOnlyKeys(constraints, [
       'city',
-      'employees',
       'deadline',
       'remainingBudget',
       'currency',
     ]) ||
     typeof constraints.city !== 'string' ||
-    typeof constraints.employees !== 'number' ||
     typeof constraints.deadline !== 'string' ||
     typeof constraints.remainingBudget !== 'number' ||
     constraints.currency !== 'MXN' ||

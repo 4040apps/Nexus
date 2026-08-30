@@ -101,6 +101,12 @@ Automated tests additionally verify:
 - unimplemented OpenAPI and well-known routes return `404` and are not advertised;
 - a broken linked endpoint fails validation.
 
+The live Intent Handoff approval uses semantic buttons for authorization and refusal, a
+labelled lifecycle list, visible focus styles, and polite status announcements. The mode
+change is stated in the handoff panel and mission header rather than conveyed by color or
+timeline position alone. Broker routing remains disabled until the canonical executed
+handoff exists.
+
 This check is suitable for CI, but it does not replace an external scan or browser audit.
 
 ## Deploy, scan, fix, and rescan

@@ -5,6 +5,7 @@ import type {
   Requirement,
   RequirementStatus,
 } from '@nexus/goal-state';
+import type { IntentHandoffLifecycle } from '@nexus/intent-handoff';
 
 export type MissionMode = 'Brand Mode' | 'Broker Mode';
 
@@ -13,6 +14,7 @@ export type OfficeProRuntimeView = {
   phase: 'READY' | 'RUNNING' | 'COMPLETE' | 'ERROR';
   message: string;
   transport?: 'WEBMCP' | 'WEBSITE_FALLBACK';
+  handoff?: IntentHandoffLifecycle;
 };
 
 type StatusPresentation = {
@@ -86,6 +88,7 @@ export function renderMissionDashboard(
 export function renderOfficeProRuntime(runtime: OfficeProRuntimeView): string {
   const complete = runtime.phase === 'COMPLETE';
   const busy = runtime.phase === 'RUNNING';
+  const brokerEnabled = runtime.handoff?.status === 'EXECUTED';
   const transportLabel =
     runtime.transport === 'WEBMCP'
       ? 'Genuine cross-origin WebMCP'
@@ -93,21 +96,23 @@ export function renderOfficeProRuntime(runtime: OfficeProRuntimeView): string {
         ? 'Normal provider website fallback'
         : 'Detecting provider capability';
 
-  return `<section class="dashboard-section provider-runtime" aria-labelledby="officepro-heading">
+  return `<section class="dashboard-section provider-runtime${brokerEnabled ? ' provider-runtime--broker' : ''}" aria-labelledby="officepro-heading" data-handoff-status="${runtime.handoff?.status ?? 'NOT_STARTED'}">
     <div class="provider-runtime__copy">
-      <p class="section-eyebrow">Brand Mode · deliberate provider</p>
-      <h2 id="officepro-heading">Ask OfficePro to fulfill furniture</h2>
-      <p>NEXUS requests only OfficePro’s exposed capabilities. Catalog, stock, pricing, packaging, and delivery rules stay on the independent provider origin.</p>
+      <p class="section-eyebrow">${brokerEnabled ? 'Broker Mode · authorized continuity' : 'Brand Mode · deliberate provider'}</p>
+      <h2 id="officepro-heading">${brokerEnabled ? 'Intent transferred to NEXUS' : 'Ask OfficePro to fulfill furniture'}</h2>
+      <p>${brokerEnabled ? 'NEXUS is now authorized to continue only the remaining mission intent across independent providers.' : 'NEXUS requests only OfficePro’s exposed capabilities. Catalog, stock, pricing, packaging, and delivery rules stay on the independent provider origin.'}</p>
       <p class="provider-runtime__status" role="status" aria-live="polite" data-officepro-status data-phase="${runtime.phase}">
         <strong>${escapeHtml(transportLabel)}</strong>
         <span>${escapeHtml(runtime.message)}</span>
       </p>
       ${
-        complete
+        runtime.handoff
+          ? renderIntentHandoff(runtime.handoff)
+          : complete
           ? `<div class="continuation-panel">
               <p><strong>OfficePro completed what it could.</strong> 3 requirements remain: computers, internet, and security.</p>
               <button type="button" data-continue-nexus>Continue through NEXUS</button>
-              <small>This offers the explicit handoff choice. It does not start Broker Mode in Issue #19.</small>
+              <small>This prepares a minimized Intent Handoff. It does not grant authorization.</small>
             </div>`
           : `<button class="primary-action" type="button" data-ask-officepro${busy ? ' disabled aria-busy="true"' : ''}>${busy ? 'OfficePro is working…' : 'Ask OfficePro'}</button>`
       }
@@ -116,6 +121,45 @@ export function renderOfficeProRuntime(runtime: OfficeProRuntimeView): string {
       <div><span>Independent provider origin</span><code>${escapeHtml(runtime.providerOrigin)}</code></div>
       <iframe title="Independent OfficePro provider website" src="${escapeAttribute(runtime.providerOrigin)}" allow="tools"></iframe>
     </div>
+  </section>`;
+}
+
+export function renderIntentHandoff(handoff: IntentHandoffLifecycle): string {
+  const statusOrder = ['PROPOSED', 'AUTHORIZED', 'EXECUTED'] as const;
+  const currentIndex = statusOrder.indexOf(handoff.status);
+  const remaining = handoff.remainingRequirements
+    .map((requirement) => `<li>${escapeHtml(REQUIREMENT_LABELS[requirement.type] ?? titleCase(requirement.type))}${requirement.quantity === undefined ? '' : ` · ${requirement.quantity}`}</li>`)
+    .join('');
+
+  return `<section class="handoff-panel handoff-panel--${handoff.status.toLowerCase()}" aria-labelledby="handoff-heading">
+    <p class="handoff-panel__mode">Intent Handoff · ${escapeHtml(handoff.status)}</p>
+    <h3 id="handoff-heading">${handoff.status === 'EXECUTED' ? 'NEXUS can continue the remaining goal' : 'Continue this goal through NEXUS?'}</h3>
+    <ol class="handoff-lifecycle" aria-label="Intent Handoff lifecycle">
+      ${statusOrder.map((status, index) => `<li class="${index <= currentIndex ? 'is-complete' : ''}" aria-current="${status === handoff.status ? 'step' : 'false'}"><span aria-hidden="true">${index <= currentIndex ? '✓' : index + 1}</span>${titleCase(status)}</li>`).join('')}
+    </ol>
+    ${
+      handoff.status === 'PROPOSED'
+        ? `<div class="handoff-summary">
+            <div>
+              <strong>OfficePro fulfilled</strong>
+              <ul><li>Desks · 20</li><li>Chairs · 20</li></ul>
+            </div>
+            <div>
+              <strong>3 requirements remain</strong>
+              <ul>${remaining}</ul>
+            </div>
+          </div>
+          <p>NEXUS is requesting permission to discover independent providers for these remaining requirements.</p>
+          <div class="handoff-budget"><span>Remaining budget</span><strong>${formatMoney(handoff.constraints.remainingBudget)}</strong></div>
+          <p class="handoff-assurance">Granting this permission does not make a purchase, reservation, signature, or other commitment.</p>
+          <div class="handoff-actions">
+            <button type="button" data-authorize-handoff>Authorize NEXUS to continue</button>
+            <button type="button" class="secondary-action" data-stay-officepro>Stay with OfficePro</button>
+          </div>`
+        : handoff.status === 'AUTHORIZED'
+          ? `<p class="handoff-decision" role="status" aria-live="polite"><strong>Human authorization recorded.</strong> NEXUS is executing the approved handoff. Broker routing remains locked until execution completes.</p>`
+          : `<p class="handoff-decision handoff-decision--executed" role="status" aria-live="polite" data-broker-enabled="true"><strong>Intent transferred to NEXUS · Broker Mode enabled.</strong> NEXUS may now continue computers, internet, and security. No provider has been contacted yet.</p>`
+    }
   </section>`;
 }
 
@@ -261,8 +305,10 @@ function renderActivityEvent(event: ActivityEvent, goalState: GoalState): string
   const providerId = isHandoff
     ? event.sourceProviderId
     : event.providerId ?? readString(event.details, 'providerId');
-  const actor = event.action === 'REQUIREMENT_REROUTED' || isHandoff
-    ? 'NEXUS'
+  const actor = isHandoff && event.action === 'HANDOFF_AUTHORIZED'
+    ? 'Human'
+    : event.action === 'REQUIREMENT_REROUTED' || isHandoff
+      ? 'NEXUS'
     : providerId
       ? providerLabel(providerId)
       : 'NEXUS';
@@ -579,6 +625,7 @@ export const MISSION_DASHBOARD_STYLES = `
   .dashboard-section { padding: clamp(1.4rem, 3vw, 2.5rem); border: 1px solid var(--line); border-radius: 1.35rem; background: rgba(13, 25, 41, .86); }
 
   .provider-runtime { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(18rem, .85fr); gap: 2rem; align-items: stretch; border-color: #466737; background: linear-gradient(130deg, rgba(24, 46, 37, .9), rgba(13, 25, 41, .92)); }
+  .provider-runtime--broker { border-color: #4b83b8; background: linear-gradient(130deg, rgba(21, 53, 78, .94), rgba(13, 25, 41, .92)); }
   .provider-runtime h2 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.15rem); letter-spacing: -.035em; }
   .provider-runtime__copy > p:not(.section-eyebrow):not(.provider-runtime__status) { color: #c4d2ca; line-height: 1.55; }
   .provider-runtime__status { display: grid; gap: .22rem; margin: 1.25rem 0; padding: .9rem 1rem; border: 1px solid #4f6a5c; border-radius: .8rem; background: rgba(7, 20, 21, .58); }
@@ -590,12 +637,34 @@ export const MISSION_DASHBOARD_STYLES = `
   .provider-runtime__origin span { font-size: .66rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
   .provider-runtime__origin code { overflow-wrap: anywhere; color: #edffe3; font-size: .78rem; }
   .provider-runtime iframe { width: 100%; min-height: 16rem; border: 0; background: #f5f0e8; }
-  .primary-action, .continuation-panel button { padding: .85rem 1.1rem; border: 1px solid #c7fa6d; border-radius: .65rem; color: #0a1608; background: var(--accent); font: inherit; font-weight: 900; cursor: pointer; }
-  .primary-action:focus-visible, .continuation-panel button:focus-visible { outline: 3px solid #d7f5ff; outline-offset: 3px; }
+  .primary-action, .continuation-panel button, .handoff-actions button { padding: .85rem 1.1rem; border: 1px solid #c7fa6d; border-radius: .65rem; color: #0a1608; background: var(--accent); font: inherit; font-weight: 900; cursor: pointer; }
+  .primary-action:focus-visible, .continuation-panel button:focus-visible, .handoff-actions button:focus-visible { outline: 3px solid #d7f5ff; outline-offset: 3px; }
   .primary-action:disabled { cursor: wait; opacity: .68; }
   .continuation-panel { margin-top: 1.1rem; padding: 1rem; border: 1px solid #72934c; border-radius: .8rem; background: rgba(28, 56, 26, .68); }
   .continuation-panel p { margin: 0 0 .8rem; line-height: 1.5; }
   .continuation-panel small { display: block; margin-top: .65rem; color: #b8c9b2; }
+  .handoff-panel { margin-top: 1.1rem; padding: clamp(1rem, 2vw, 1.4rem); border: 1px solid #708aa6; border-radius: 1rem; background: rgba(9, 25, 41, .82); }
+  .handoff-panel--executed { border-color: #73a9d5; background: rgba(13, 43, 67, .86); }
+  .handoff-panel__mode { margin: 0 0 .35rem; color: #b9d9f3; font-size: .7rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+  .handoff-panel h3 { margin: 0; font-size: 1.35rem; letter-spacing: -.025em; }
+  .handoff-lifecycle { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin: 1.1rem 0; padding: 0; list-style: none; }
+  .handoff-lifecycle li { display: flex; align-items: center; gap: .4rem; min-width: 0; padding: .55rem; border: 1px solid #40566d; border-radius: .6rem; color: #9babbc; font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+  .handoff-lifecycle li span { display: grid; place-items: center; flex: 0 0 auto; width: 1.3rem; aspect-ratio: 1; border: 1px solid #586c81; border-radius: 50%; font-size: .67rem; }
+  .handoff-lifecycle li.is-complete { border-color: #579070; color: #d8ffe5; background: rgba(25, 67, 46, .6); }
+  .handoff-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+  .handoff-summary > div { padding: .8rem; border: 1px solid #3f5871; border-radius: .65rem; background: rgba(14, 36, 57, .7); }
+  .handoff-summary strong { color: #e7f2ff; font-size: .82rem; }
+  .handoff-summary ul { margin: .55rem 0 0; padding-left: 1.1rem; color: #c4d3e1; font-size: .8rem; line-height: 1.55; }
+  .handoff-panel > p:not(.handoff-panel__mode) { color: #c5d2df; font-size: .86rem; line-height: 1.5; }
+  .handoff-budget { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-block: 1px solid #40576e; }
+  .handoff-budget span { color: #a9bbcc; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .handoff-budget strong { font-size: 1.15rem; }
+  .handoff-assurance { padding: .75rem; border-left: .2rem solid #76a4c9; background: rgba(36, 67, 93, .45); }
+  .handoff-actions { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1rem; }
+  .handoff-actions .secondary-action { border-color: #66809a; color: #e5edf5; background: #1a3044; }
+  .handoff-decision { margin-bottom: 0; padding: 1rem; border: 1px solid #68819a; border-radius: .7rem; background: rgba(30, 55, 76, .65); }
+  .handoff-decision strong { display: block; margin-bottom: .3rem; color: #f0f6fc; }
+  .handoff-decision--executed { border-color: #5b9b77; background: rgba(26, 73, 50, .68); }
   .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-bottom: 1.5rem; }
   .section-heading h2 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.15rem); letter-spacing: -.035em; }
   .section-heading > p { margin: 0; color: var(--muted); font-size: .83rem; font-weight: 700; }
@@ -686,6 +755,7 @@ export const MISSION_DASHBOARD_STYLES = `
     .mission-hero, .dashboard-section { border-radius: 1rem; }
     .mission-progress { grid-template-columns: 1fr; }
     .mission-facts, .requirement-grid { grid-template-columns: 1fr; }
+    .handoff-summary, .handoff-lifecycle { grid-template-columns: 1fr; }
     .requirement-card--blocked, .requirement-card--requires-human { grid-column: span 1; }
     .section-heading { align-items: flex-start; flex-direction: column; gap: .5rem; }
     .activity-event { grid-template-columns: 2.8rem .8rem minmax(0, 1fr); gap: .65rem; }

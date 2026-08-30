@@ -306,9 +306,10 @@ Those remain behind injected provider services. The included development example
 a real `check_availability` WebMCP tool whose availability lookup is implemented by the
 example provider service.
 
-## OfficePro Brand Mode reproduction
+## OfficePro fulfillment and Intent Handoff reproduction
 
-Issue #19 applies the validated cross-origin model to the first live hero segment. Run:
+Issues #19 and #20 apply the validated cross-origin model to the first live hero segment
+and its explicit Intent Handoff. Run:
 
 ```bash
 pnpm demo:officepro
@@ -326,8 +327,13 @@ with MXN 155,000 used. Expected unsupported result: the dashboard explicitly rep
 invoke the same provider-owned definitions. This fallback is not represented as WebMCP.
 The embedded OfficePro page also has its own working **Check the OfficePro package** action.
 
-Neither path invokes the commitment-class `request_quote` tool, performs an Intent Handoff,
-or copies OfficePro catalog/stock records into NEXUS.
+Neither path invokes the commitment-class `request_quote` tool or copies OfficePro
+catalog/stock records into NEXUS. After furniture fulfillment, **Continue through NEXUS**
+creates a continuity-layer Intent Handoff; it is not an additional provider WebMCP tool.
+The user reviews the three remaining requirements and MXN 345,000 budget, then explicitly
+authorizes execution. Broker Mode remains locked through `PROPOSED` and `AUTHORIZED` and
+is enabled only by `EXECUTED`. The demo stops before discovering or invoking another
+provider.
 
 ## Demo proof
 
