@@ -66,14 +66,13 @@ Exact tool count should stay small enough for a reliable demo. Target roughly 12
 
 ## Cross-origin
 
-### Issue #6 spike result: CROSS-ORIGIN CONSTRAINED
+### Issue #6 spike result: CROSS-ORIGIN VALIDATED
 
-**Decision B — CROSS-ORIGIN CONSTRAINED (2026-08-30).** The current WebMCP API has a
-standards-documented cross-origin mechanism, but it is still experimental and is not
-enabled in every Chrome 151 runtime. NEXUS should use the standards-compliant container
-architecture below in a controlled Chrome 151+ runtime launched with WebMCP enabled. The
-demo must run the positive and negative preflight described here; it must not claim
-cross-origin support if that preflight does not pass.
+**Decision A — CROSS-ORIGIN VALIDATED (2026-08-30).** Cross-origin WebMCP was validated
+end-to-end in the controlled NEXUS demo environment using Chrome 151 with WebMCP explicitly
+enabled via `--enable-features=WebMCP`. The validated architecture uses the
+standards-supported permission and origin controls described below. This result does not
+mean WebMCP is enabled by default in Chrome 151 or in every Chrome runtime.
 
 This decision is based on the current [Chrome imperative API documentation][chrome-api],
 the [Chrome WebMCP security documentation][chrome-security], and the experimental
@@ -145,26 +144,68 @@ returning the typed availability result to the consumer.
 
 ### Exact runtime requirements
 
-The automated browser check for this issue used the Codex in-app browser with this user
-agent:
+Both the initial unflagged check and the successful manual validation used this Chrome 151
+user agent on the Mac Studio:
 
 ```text
 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36
 ```
 
-That browser was not launched with the experimental WebMCP feature enabled. In that exact
-runtime, the provider iframe did not expose `document.modelContext`; registration returned
-`UNSUPPORTED`. This is a real negative capability result, not a mocked permission result.
-The normal provider availability button still returned:
+The initial Codex in-app browser was not launched with the experimental WebMCP feature
+enabled. In that runtime, the provider iframe did not expose `document.modelContext`;
+registration returned `UNSUPPORTED`, while the normal provider availability button still
+returned:
 
 ```json
 {"itemId":"desk-20","city":"Guadalajara","available":true}
 ```
 
-Current Puppeteer documentation specifies Chrome 151+ plus the
-`--enable-features=WebMCP` launch flag. A compatible Chrome origin-trial configuration may
-also expose the API, but the demo must verify the API rather than infer support from the
-Chrome version alone.
+The successful end-to-end validation launched Chrome 151 with
+`--enable-features=WebMCP`. Current Puppeteer documentation specifies Chrome 151+ plus this
+flag. A compatible Chrome origin-trial configuration may also expose the API, but the demo
+must verify the API rather than infer support from the Chrome version alone.
+
+### Observed end-to-end validation
+
+The manual preflight was executed on the Mac Studio after PR #14 merged. These are observed
+browser results, not mocked expectations.
+
+At the authorized consumer, `http://localhost:4100`:
+
+- provider registration: `REGISTERED` from the independent provider at
+  `http://localhost:4200`;
+- provider tool: `check_availability`;
+- WebMCP discovery succeeded through `getTools({ fromOrigins })`;
+- WebMCP invocation succeeded through `executeTool()`;
+- outcome: `AUTHORIZED_SUCCESS`;
+- provider-owned invocation count changed from `0` to `1`;
+- returned provider-owned result:
+
+```json
+{
+  "ok": true,
+  "data": {
+    "itemId": "desk-20",
+    "city": "Guadalajara",
+    "available": true
+  }
+}
+```
+
+This proves execution reached provider-owned logic on the independent provider origin. It
+was not a NEXUS-side simulation or REST proxy.
+
+At the unauthorized consumer, `http://localhost:4300`:
+
+- expected access: `UNAUTHORIZED`;
+- provider registration remained `REGISTERED` at `http://localhost:4200`;
+- outcome: `UNAUTHORIZED_BLOCKED`;
+- browser/harness message:
+  `check_availability was not exposed to http://localhost:4300.`;
+- provider-owned invocation count remained `0`.
+
+This proves the provider's `exposedTo` boundary prevented an origin outside its allowlist
+from discovering or invoking the provider tool.
 
 ### Setup and manual verification
 
@@ -185,15 +226,15 @@ path to the installed Chrome 151+ channel:
   http://localhost:4100
 ```
 
-Then reproduce both paths:
+Then reproduce the recorded results:
 
 1. At `http://localhost:4100`, confirm provider registration is `REGISTERED`.
 2. Select **Discover and invoke provider tool**.
-3. Expected positive output is `AUTHORIZED_SUCCESS`, a typed availability result, and a
+3. The validated positive output is `AUTHORIZED_SUCCESS`, a typed availability result, and a
    provider iframe invocation count of `1`.
 4. Open `http://localhost:4300` in the same enabled profile.
 5. Select **Discover and invoke provider tool**.
-6. Expected negative output is `UNAUTHORIZED_BLOCKED`; `check_availability` must not be
+6. The validated negative output is `UNAUTHORIZED_BLOCKED`; `check_availability` must not be
    discoverable and provider-owned logic must not run.
 7. Repeat without the WebMCP flag. Both consumers must report `UNSUPPORTED`, while **Check
    website availability** on the provider page must still work.
@@ -207,8 +248,9 @@ If the authorized path reports `AUTHORIZED_TOOL_NOT_VISIBLE`, `AUTHORIZED_FAILED
 Unit tests verify the deterministic parts of the contract: distinct origins, the iframe
 Permissions Policy declaration, current `fromOrigins` discovery and JSON-string invocation
 shape, the real provider page surface, and the provider-template behavior. They deliberately
-do not mock browser permission enforcement. The manual harness is required because the
-repository's automation runtime cannot add the experimental browser launch flag.
+do not mock browser permission enforcement. The browser permission boundary was validated
+separately with the real manual harness because the repository's automation runtime cannot
+add the experimental browser launch flag.
 
 ### Known limitations and hackathon fallback
 
@@ -217,15 +259,14 @@ repository's automation runtime cannot add the experimental browser launch flag.
 - `exposedTo` and `fromOrigins` accept secure origins; production must use exact HTTPS
   origins rather than wildcards.
 - A live browsing context is required; this is not a headless provider RPC mechanism.
-- The Issue #6 environment could verify graceful degradation but could not record a real
-  flagged-browser positive or origin-enforcement run.
 
-For the hackathon, use the controlled NEXUS container at the authorized origin, embed each
-independent HTTPS provider with `allow="tools"`, and require the positive/negative preflight
-before presenting. If the judged runtime cannot pass that preflight, fall back to visiting
-each independent provider in an authorized browser/extension context and invoke its genuine
-page-owned WebMCP tools there. Do not proxy provider tools or provider business data through
-NEXUS, and do not represent this fallback as direct cross-origin invocation.
+For the hackathon, use the now-validated controlled NEXUS container at the authorized
+origin, launch Chrome 151+ with WebMCP enabled, embed each independent HTTPS provider with
+`allow="tools"`, and require the positive/negative preflight before presenting. If the
+judged runtime cannot pass that preflight, fall back to visiting each independent provider
+in an authorized browser/extension context and invoke its genuine page-owned WebMCP tools
+there. Do not proxy provider tools or provider business data through NEXUS, and do not
+represent this fallback as direct cross-origin invocation.
 
 [chrome-api]: https://developer.chrome.com/docs/ai/webmcp/imperative-api
 [chrome-security]: https://developer.chrome.com/docs/ai/webmcp/secure-tools
