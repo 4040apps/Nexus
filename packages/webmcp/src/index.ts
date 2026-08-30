@@ -1,13 +1,33 @@
 export type JsonPrimitive = string | number | boolean | null;
-export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+export type JsonValue =
+  | JsonPrimitive
+  | readonly JsonValue[]
+  | { readonly [key: string]: JsonValue };
 
 export type JsonSchema = Readonly<Record<string, JsonValue>>;
 
 export type WebMcpToolDefinition<TInput, TOutput> = {
   name: string;
+  title?: string;
   description: string;
   inputSchema: JsonSchema;
-  execute: (input: TInput) => Promise<TOutput>;
+  execute: (input: TInput) => TOutput | Promise<TOutput>;
+};
+
+export type WebMcpRegisterToolOptions = {
+  signal?: AbortSignal;
+  exposedTo?: readonly string[];
+};
+
+export type WebMcpModelContext = {
+  registerTool: (
+    tool: WebMcpToolDefinition<unknown, unknown>,
+    options?: WebMcpRegisterToolOptions,
+  ) => Promise<void>;
+};
+
+export type WebMcpDocument = {
+  readonly modelContext?: WebMcpModelContext;
 };
 
 export type StructuredToolError = {
