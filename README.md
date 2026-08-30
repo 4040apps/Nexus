@@ -78,6 +78,20 @@ authorized consumer on port 4100, the independent provider on port 4200, and an 
 negative control on port 4300. Exact browser requirements and validated results are in
 [`docs/webmcp.md`](docs/webmcp.md#issue-6-spike-result-cross-origin-validated).
 
+The NEXUS package also provides real `robots.txt`, `sitemap.xml`, `llms.txt`, Schema.org,
+and accessible shell contracts for a configurable deployment origin. Validate them locally
+after building the package:
+
+```bash
+pnpm --filter @nexus/app-nexus build
+pnpm --filter @nexus/app-nexus check:readiness -- https://nexus.your-domain.example
+```
+
+The external scan and Lighthouse scores remain pending until a public NEXUS deployment is
+actually measured. The evidence policy, accessibility checklist, deferred surfaces, and
+deploy/scan/fix/rescan workflow are in
+[`docs/agent-readiness.md`](docs/agent-readiness.md#targets-and-evidence-status).
+
 ## Sprint 0
 
 Sprint 0 establishes the contracts and guardrails Codex must follow before feature implementation begins. See the Sprint 0 pull request and GitHub Issues for the executable backlog.
