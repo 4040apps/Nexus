@@ -105,15 +105,40 @@ each material transition can append a deterministic, auditable `ActivityEvent`.
 
 ## Intent Handoff contract
 
-Handoff payload contains only what the next stage needs:
+An Intent Handoff has three explicit lifecycle stages:
+
+```text
+PROPOSED (Brand Mode, not authorized)
+  -> AUTHORIZED (explicit human consent recorded)
+  -> EXECUTED (Broker Mode routing may begin)
+```
+
+The proposal and authorization records share the same minimized continuation data, but
+only the executed payload is an `IntentHandoff`:
 
 ```ts
 type IntentHandoff = {
+  handoffId: string;
   goalId: string;
-  sourceProviderId: string;
+  status: 'EXECUTED';
+  source: {
+    providerId: string;
+    mode: 'BRAND';
+  };
+  destination: {
+    type: 'NEXUS';
+    mode: 'BROKER';
+  };
   authorizedByUser: true;
+  authorization: {
+    required: true;
+    approved: true;
+    approvedAt: string;
+  };
+  executedAt: string;
   constraints: {
     city: string;
+    employees: number;
     deadline: string;
     remainingBudget: number;
     currency: 'MXN';
@@ -126,7 +151,13 @@ type IntentHandoff = {
 };
 ```
 
-No provider-private catalog or unrelated user data belongs in the handoff.
+The payload is projected from Goal State rather than copying Goal State wholesale.
+Fulfilled requirements, provider assignments, estimates, blockers, catalogs, stock,
+prices, activity history and unrelated customer/provider data are not transferred.
+Broker routing is allowed only for a validated `EXECUTED` handoff with explicit approval.
+
+The Goal State timeline records `HANDOFF_PROPOSED`, `HANDOFF_AUTHORIZED`, and
+`HANDOFF_EXECUTED` as goal-level audit events; these do not change requirement statuses.
 
 ## Registry contract
 

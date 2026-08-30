@@ -58,19 +58,40 @@ export type Requirement = {
   failureHistory?: RequirementFailure[];
 };
 
-export type ActivityAction = 'REQUIREMENT_STATUS_CHANGED' | 'REQUIREMENT_REROUTED';
+export type RequirementActivityAction =
+  | 'REQUIREMENT_STATUS_CHANGED'
+  | 'REQUIREMENT_REROUTED';
 
-export type ActivityEvent = {
+export type HandoffActivityAction =
+  | 'HANDOFF_PROPOSED'
+  | 'HANDOFF_AUTHORIZED'
+  | 'HANDOFF_EXECUTED';
+
+export type ActivityAction = RequirementActivityAction | HandoffActivityAction;
+
+export type RequirementActivityEvent = {
   id: string;
   occurredAt: string;
   requirementId: string;
   providerId?: string;
-  action: ActivityAction;
+  action: RequirementActivityAction;
   fromStatus: RequirementStatus;
   toStatus: RequirementStatus;
   outcome: RequirementStatus;
   details?: Readonly<Record<string, unknown>>;
 };
+
+export type HandoffActivityEvent = {
+  id: string;
+  occurredAt: string;
+  handoffId: string;
+  sourceProviderId: string;
+  action: HandoffActivityAction;
+  outcome: 'PROPOSED' | 'AUTHORIZED' | 'EXECUTED';
+  details?: Readonly<Record<string, unknown>>;
+};
+
+export type ActivityEvent = RequirementActivityEvent | HandoffActivityEvent;
 
 export type GoalState = {
   id: string;
