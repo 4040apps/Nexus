@@ -15,3 +15,19 @@ export const NEXUS_CAPABILITIES = [
   'route_requirement',
   'get_goal_state',
 ] as const;
+
+export {
+  NEXUS_READINESS_ROUTES,
+  createNexusReadinessSurfaces,
+  getNexusReadinessResponse,
+  validateNexusReadinessSurfaces,
+} from './readiness.js';
+
+export type {
+  NexusReadinessConfig,
+  NexusReadinessResponse,
+  NexusReadinessRoute,
+  NexusReadinessSurfaces,
+  NexusReadinessValidation,
+  NexusStructuredData,
+} from './readiness.js';
