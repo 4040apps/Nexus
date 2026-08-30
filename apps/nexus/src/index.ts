@@ -25,13 +25,14 @@ export {
   renderIntentHandoff,
   renderMissionDashboard,
   renderOfficeProRuntime,
+  renderTechSupplyRuntime,
   renderMissionProgress,
   renderMissionSummary,
   renderRequirementCard,
   renderRequirementStatus,
 } from './dashboard.js';
 
-export type { MissionMode, OfficeProRuntimeView } from './dashboard.js';
+export type { MissionMode, OfficeProRuntimeView, TechSupplyRuntimeView } from './dashboard.js';
 
 export {
   OFFICEPRO_BRAND_TOOL_NAMES,
@@ -53,6 +54,22 @@ export {
   executeOfficeProIntentHandoff,
   proposeOfficeProIntentHandoff,
 } from './officepro-intent-handoff.js';
+
+export {
+  TECHSUPPLY_BROKER_TOOL_NAMES,
+  TECHSUPPLY_DISCOVERY_METADATA,
+  TECHSUPPLY_PROVIDER_ORIGIN,
+  TechSupplyBrokerModeError,
+  discoverComputerProvider,
+  runTechSupplyBrokerMode,
+} from './techsupply-broker-mode.js';
+export type {
+  TechSupplyBrokerModeErrorCode,
+  TechSupplyBrokerModeResult,
+  TechSupplyBrokerToolName,
+  TechSupplyToolInvoker,
+  ThinProviderMetadata,
+} from './techsupply-broker-mode.js';
 
 export {
   HERO_DASHBOARD_STATE_NAMES,

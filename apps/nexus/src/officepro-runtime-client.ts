@@ -1,8 +1,3 @@
-import type {
-  WebMcpDocument,
-  WebMcpModelContext,
-  WebMcpRemoteTool,
-} from '@nexus/webmcp';
 import { canBeginBrokerRouting } from '@nexus/intent-handoff';
 import type { IntentHandoffLifecycle } from '@nexus/intent-handoff';
 
@@ -18,25 +13,41 @@ import {
   OfficeProBrandModeError,
   runOfficeProBrandMode,
 } from './officepro-brand-mode.js';
-import type {
-  OfficeProBrandToolName,
-  OfficeProToolInvoker,
-} from './officepro-brand-mode.js';
+import { createCrossOriginProviderInvoker } from './cross-origin-provider-client.js';
 import {
   authorizeOfficeProIntentHandoff,
   executeOfficeProIntentHandoff,
   proposeOfficeProIntentHandoff,
 } from './officepro-intent-handoff.js';
+import {
+  TECHSUPPLY_BROKER_TOOL_NAMES,
+  TECHSUPPLY_PROVIDER_ORIGIN,
+  TechSupplyBrokerModeError,
+  runTechSupplyBrokerMode,
+} from './techsupply-broker-mode.js';
 
 const PROVIDER_ORIGIN = 'http://localhost:4500';
 const main = document.querySelector<HTMLElement>('#main-content');
 let goalState = createInitialHeroGoalState();
-let requestSequence = 0;
 let handoff: IntentHandoffLifecycle | undefined;
 let providerTransport: 'WEBMCP' | 'WEBSITE_FALLBACK' | undefined;
 let providerMessage = 'Waiting for the independent OfficePro origin to report its WebMCP capability.';
+let techSupplyProviderReady = false;
+let techSupplyView:
+  | {
+      providerOrigin: string;
+      phase: 'READY' | 'RUNNING' | 'COMPLETE' | 'ERROR';
+      message: string;
+      transport?: 'WEBMCP' | 'WEBSITE_FALLBACK';
+    }
+  | undefined;
 
 bindControls();
+window.addEventListener('message', (event: MessageEvent<unknown>) => {
+  if (isTechSupplyReadyEvent(event)) {
+    techSupplyProviderReady = true;
+  }
+});
 
 function bindControls(): void {
   document.querySelector<HTMLButtonElement>('[data-ask-officepro]')?.addEventListener('click', () => {
@@ -50,6 +61,9 @@ function bindControls(): void {
   });
   document.querySelector<HTMLButtonElement>('[data-stay-officepro]')?.addEventListener('click', () => {
     stayWithOfficePro();
+  });
+  document.querySelector<HTMLButtonElement>('[data-route-computers]')?.addEventListener('click', () => {
+    void runTechSupplyFlow();
   });
 }
 
@@ -117,10 +131,100 @@ async function authorizeAndExecuteHandoff(): Promise<void> {
     }
     goalState = executed.goalState;
     handoff = executed.handoff;
+    techSupplyView = {
+      providerOrigin: TECHSUPPLY_PROVIDER_ORIGIN,
+      phase: 'READY',
+      message: 'Broker Mode is authorized. TechSupply has not been contacted yet.',
+    };
     renderCurrent();
   } catch (error) {
     renderLifecycleError(error);
   }
+}
+
+async function runTechSupplyFlow(): Promise<void> {
+  if (!handoff || handoff.status !== 'EXECUTED' || !canBeginBrokerRouting(handoff)) return;
+  setTechSupplyWorkingStatus();
+
+  try {
+    await waitForTechSupplyProvider();
+    const frame = document.querySelector<HTMLIFrameElement>(
+      `iframe[src="${TECHSUPPLY_PROVIDER_ORIGIN}"]`,
+    );
+    const { invoker, transport } = await createCrossOriginProviderInvoker({
+      providerOrigin: TECHSUPPLY_PROVIDER_ORIGIN,
+      toolNames: TECHSUPPLY_BROKER_TOOL_NAMES,
+      frame,
+      requestType: 'NEXUS_TECHSUPPLY_TOOL_REQUEST',
+      responseType: 'TECHSUPPLY_TOOL_RESULT',
+      requestIdPrefix: 'techsupply-request',
+      timeoutLabel: 'TechSupply',
+    });
+    const result = await runTechSupplyBrokerMode(
+      goalState,
+      handoff,
+      invoker,
+    );
+    goalState = result.goalState;
+    techSupplyView = {
+      providerOrigin: TECHSUPPLY_PROVIDER_ORIGIN,
+      phase: 'COMPLETE',
+      transport,
+      message:
+        transport === 'WEBMCP'
+          ? 'Three genuine TechSupply WebMCP tools completed on the independent provider origin.'
+          : 'TechSupply’s provider-owned website flow completed because WebMCP was unavailable.',
+    };
+    renderCurrent();
+  } catch (error) {
+    techSupplyView = {
+      providerOrigin: TECHSUPPLY_PROVIDER_ORIGIN,
+      phase: 'ERROR',
+      message:
+        error instanceof TechSupplyBrokerModeError || error instanceof Error
+          ? error.message
+          : 'TechSupply Broker Mode could not complete.',
+    };
+    renderCurrent();
+  }
+}
+
+function waitForTechSupplyProvider(): Promise<void> {
+  if (techSupplyProviderReady) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      window.removeEventListener('message', onReady);
+      reject(new Error('The independent TechSupply provider did not become ready.'));
+    }, 5_000);
+    const onReady = (event: MessageEvent<unknown>): void => {
+      if (!isTechSupplyReadyEvent(event)) return;
+      window.clearTimeout(timeout);
+      window.removeEventListener('message', onReady);
+      techSupplyProviderReady = true;
+      resolve();
+    };
+    window.addEventListener('message', onReady);
+  });
+}
+
+function isProviderReady(value: unknown): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    value.type === 'TECHSUPPLY_PROVIDER_READY'
+  );
+}
+
+function isTechSupplyReadyEvent(event: MessageEvent<unknown>): boolean {
+  const frame = document.querySelector<HTMLIFrameElement>(
+    `iframe[src="${TECHSUPPLY_PROVIDER_ORIGIN}"]`,
+  );
+  return (
+    event.origin === TECHSUPPLY_PROVIDER_ORIGIN &&
+    event.source === frame?.contentWindow &&
+    isProviderReady(event.data)
+  );
 }
 
 function stayWithOfficePro(): void {
@@ -149,6 +253,21 @@ function renderLifecycleError(error: unknown): void {
   });
 }
 
+function setTechSupplyWorkingStatus(): void {
+  const button = document.querySelector<HTMLButtonElement>('[data-route-computers]');
+  if (button) {
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    button.textContent = 'TechSupply is working…';
+  }
+  const status = document.querySelector<HTMLElement>('[data-techsupply-status]');
+  if (status) {
+    status.dataset.phase = 'RUNNING';
+    status.innerHTML =
+      '<strong>Provider operation in progress</strong><span>Discovering and invoking TechSupply on its independent origin.</span>';
+  }
+}
+
 function renderLiveGoalState(): void {
   const hero = document.querySelector<HTMLElement>('.mission-hero');
   const graph = document.querySelector<HTMLElement>('.goal-graph');
@@ -158,95 +277,18 @@ function renderLiveGoalState(): void {
   if (activity) activity.outerHTML = renderAgentActivityTimeline(goalState);
 }
 
-async function createInvoker(): Promise<{
-  invoker: OfficeProToolInvoker;
-  transport: 'WEBMCP' | 'WEBSITE_FALLBACK';
-}> {
-  const modelContext = (document as unknown as WebMcpDocument).modelContext;
-  if (
-    modelContext &&
-    typeof modelContext.getTools === 'function' &&
-    typeof modelContext.executeTool === 'function'
-  ) {
-    try {
-      const tools = await modelContext.getTools({ fromOrigins: [PROVIDER_ORIGIN] });
-      if (OFFICEPRO_BRAND_TOOL_NAMES.every((name) => tools.some((tool) => tool.name === name))) {
-        return { invoker: createWebMcpInvoker(modelContext, tools), transport: 'WEBMCP' };
-      }
-    } catch {
-      // The normal provider website is the explicit, visible fallback below.
-    }
-  }
-
+async function createInvoker() {
   const frame = document.querySelector<HTMLIFrameElement>('iframe[src="http://localhost:4500"]');
-  if (!frame?.contentWindow) {
-    throw new Error('The independent OfficePro provider frame is unavailable.');
-  }
-  return { invoker: createWebsiteInvoker(frame.contentWindow), transport: 'WEBSITE_FALLBACK' };
-}
-
-function createWebMcpInvoker(
-  modelContext: WebMcpModelContext,
-  tools: readonly WebMcpRemoteTool[],
-): OfficeProToolInvoker {
-  return {
-    async invoke(toolName, input) {
-      const tool = tools.find((candidate) => candidate.name === toolName);
-      if (!tool || !modelContext.executeTool) {
-        throw new Error(`${toolName} was not discovered on ${PROVIDER_ORIGIN}.`);
-      }
-      return modelContext.executeTool(tool, JSON.stringify(input));
-    },
-  };
-}
-
-function createWebsiteInvoker(providerWindow: Window): OfficeProToolInvoker {
-  return {
-    invoke(toolName, input) {
-      return new Promise((resolve, reject) => {
-        const requestId = `officepro-request-${++requestSequence}`;
-        const timeout = window.setTimeout(() => {
-          window.removeEventListener('message', onMessage);
-          reject(new Error(`OfficePro’s normal website did not answer ${toolName}.`));
-        }, 5_000);
-        const onMessage = (event: MessageEvent<unknown>): void => {
-          if (
-            event.origin !== PROVIDER_ORIGIN ||
-            event.source !== providerWindow ||
-            !isToolResponse(event.data, requestId, toolName)
-          ) {
-            return;
-          }
-          window.clearTimeout(timeout);
-          window.removeEventListener('message', onMessage);
-          resolve(event.data.result);
-        };
-        window.addEventListener('message', onMessage);
-        providerWindow.postMessage(
-          { type: 'NEXUS_OFFICEPRO_TOOL_REQUEST', requestId, toolName, input },
-          PROVIDER_ORIGIN,
-        );
-      });
-    },
-  };
-}
-
-function isToolResponse(
-  value: unknown,
-  requestId: string,
-  toolName: OfficeProBrandToolName,
-): value is { type: 'OFFICEPRO_TOOL_RESULT'; requestId: string; toolName: string; result: unknown } {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'type' in value &&
-    value.type === 'OFFICEPRO_TOOL_RESULT' &&
-    'requestId' in value &&
-    value.requestId === requestId &&
-    'toolName' in value &&
-    value.toolName === toolName &&
-    'result' in value
-  );
+  const result = await createCrossOriginProviderInvoker({
+    providerOrigin: PROVIDER_ORIGIN,
+    toolNames: OFFICEPRO_BRAND_TOOL_NAMES,
+    frame,
+    requestType: 'NEXUS_OFFICEPRO_TOOL_REQUEST',
+    responseType: 'OFFICEPRO_TOOL_RESULT',
+    requestIdPrefix: 'officepro-request',
+    timeoutLabel: 'OfficePro',
+  });
+  return result;
 }
 
 function setWorkingStatus(message: string): void {
@@ -275,7 +317,7 @@ function render(view: {
     message: view.message,
     ...(view.transport ? { transport: view.transport } : {}),
     ...(handoff ? { handoff } : {}),
-  });
+  }, techSupplyView);
   bindControls();
 }
 

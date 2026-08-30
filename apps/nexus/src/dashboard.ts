@@ -17,6 +17,13 @@ export type OfficeProRuntimeView = {
   handoff?: IntentHandoffLifecycle;
 };
 
+export type TechSupplyRuntimeView = {
+  providerOrigin: string;
+  phase: 'READY' | 'RUNNING' | 'COMPLETE' | 'ERROR';
+  message: string;
+  transport?: 'WEBMCP' | 'WEBSITE_FALLBACK';
+};
+
 type StatusPresentation = {
   label: string;
   symbol: string;
@@ -76,16 +83,21 @@ export function deriveMissionMode(goalState: GoalState): MissionMode | undefined
 export function renderMissionDashboard(
   goalState: GoalState,
   officeProRuntime?: OfficeProRuntimeView,
+  techSupplyRuntime?: TechSupplyRuntimeView,
 ): string {
   return `<article class="mission-dashboard" aria-labelledby="mission-title">
   ${renderMissionSummary(goalState)}
-  ${officeProRuntime ? renderOfficeProRuntime(officeProRuntime) : ''}
+  ${officeProRuntime ? renderOfficeProRuntime(officeProRuntime, techSupplyRuntime !== undefined && techSupplyRuntime.phase !== 'READY') : ''}
+  ${techSupplyRuntime ? renderTechSupplyRuntime(techSupplyRuntime) : ''}
   ${renderGoalGraph(goalState)}
   ${renderAgentActivityTimeline(goalState)}
 </article>`;
 }
 
-export function renderOfficeProRuntime(runtime: OfficeProRuntimeView): string {
+export function renderOfficeProRuntime(
+  runtime: OfficeProRuntimeView,
+  providerRoutingStarted = false,
+): string {
   const complete = runtime.phase === 'COMPLETE';
   const busy = runtime.phase === 'RUNNING';
   const brokerEnabled = runtime.handoff?.status === 'EXECUTED';
@@ -107,7 +119,7 @@ export function renderOfficeProRuntime(runtime: OfficeProRuntimeView): string {
       </p>
       ${
         runtime.handoff
-          ? renderIntentHandoff(runtime.handoff)
+          ? renderIntentHandoff(runtime.handoff, providerRoutingStarted)
           : complete
           ? `<div class="continuation-panel">
               <p><strong>OfficePro completed what it could.</strong> 3 requirements remain: computers, internet, and security.</p>
@@ -124,7 +136,10 @@ export function renderOfficeProRuntime(runtime: OfficeProRuntimeView): string {
   </section>`;
 }
 
-export function renderIntentHandoff(handoff: IntentHandoffLifecycle): string {
+export function renderIntentHandoff(
+  handoff: IntentHandoffLifecycle,
+  providerRoutingStarted = false,
+): string {
   const statusOrder = ['PROPOSED', 'AUTHORIZED', 'EXECUTED'] as const;
   const currentIndex = statusOrder.indexOf(handoff.status);
   const remaining = handoff.remainingRequirements
@@ -158,8 +173,48 @@ export function renderIntentHandoff(handoff: IntentHandoffLifecycle): string {
           </div>`
         : handoff.status === 'AUTHORIZED'
           ? `<p class="handoff-decision" role="status" aria-live="polite"><strong>Human authorization recorded.</strong> NEXUS is executing the approved handoff. Broker routing remains locked until execution completes.</p>`
-          : `<p class="handoff-decision handoff-decision--executed" role="status" aria-live="polite" data-broker-enabled="true"><strong>Intent transferred to NEXUS · Broker Mode enabled.</strong> NEXUS may now continue computers, internet, and security. No provider has been contacted yet.</p>`
+          : `<p class="handoff-decision handoff-decision--executed" role="status" aria-live="polite" data-broker-enabled="true"><strong>Intent transferred to NEXUS · Broker Mode enabled.</strong> ${providerRoutingStarted ? 'Authorized provider activity is shown in the next step.' : 'NEXUS may now continue computers, internet, and security. No provider has been contacted yet.'}</p>`
     }
+  </section>`;
+}
+
+export function renderTechSupplyRuntime(runtime: TechSupplyRuntimeView): string {
+  const complete = runtime.phase === 'COMPLETE';
+  const busy = runtime.phase === 'RUNNING';
+  const transportLabel =
+    runtime.transport === 'WEBMCP'
+      ? 'Genuine cross-origin WebMCP'
+      : runtime.transport === 'WEBSITE_FALLBACK'
+        ? 'Normal provider website fallback'
+        : runtime.phase === 'ERROR'
+          ? 'TechSupply execution stopped safely'
+          : 'Broker provider ready';
+
+  return `<section class="dashboard-section provider-runtime provider-runtime--techsupply" aria-labelledby="techsupply-heading" data-techsupply-phase="${runtime.phase}">
+    <div class="provider-runtime__copy">
+      <p class="section-eyebrow">Broker Mode · computer requirement</p>
+      <h2 id="techsupply-heading">${complete ? '20 computers fulfilled by TechSupply' : 'Route computers through TechSupply'}</h2>
+      <p>NEXUS selected TechSupply from thin computer capability metadata. Catalog, item ID, inventory, unit price, package construction, and delivery facts remain on the independent provider origin.</p>
+      <p class="provider-runtime__status" role="status" aria-live="polite" data-techsupply-status data-phase="${runtime.phase}">
+        <strong>${escapeHtml(transportLabel)}</strong>
+        <span>${escapeHtml(runtime.message)}</span>
+      </p>
+      ${
+        complete
+          ? `<dl class="provider-result-summary" aria-label="TechSupply fulfillment result">
+              ${renderFact('Quantity', '20 computers')}
+              ${renderFact('Mission cost', 'MXN 190,000')}
+              ${renderFact('Delivery', 'Sep 22, 2026 · before deadline')}
+              ${renderFact('Remaining', 'Internet and security')}
+            </dl>
+            <p class="provider-result-complete"><strong>Computer requirement fulfilled.</strong> Mission progress is now 60%.</p>`
+          : `<button class="primary-action" type="button" data-route-computers${busy ? ' disabled aria-busy="true"' : ''}>${busy ? 'TechSupply is working…' : runtime.phase === 'ERROR' ? 'Retry TechSupply' : 'Find computers'}</button>`
+      }
+    </div>
+    <div class="provider-runtime__origin">
+      <div><span>Independent provider origin</span><code>${escapeHtml(runtime.providerOrigin)}</code></div>
+      <iframe title="Independent TechSupply provider website" src="${escapeAttribute(runtime.providerOrigin)}" allow="tools"></iframe>
+    </div>
   </section>`;
 }
 
@@ -626,6 +681,7 @@ export const MISSION_DASHBOARD_STYLES = `
 
   .provider-runtime { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(18rem, .85fr); gap: 2rem; align-items: stretch; border-color: #466737; background: linear-gradient(130deg, rgba(24, 46, 37, .9), rgba(13, 25, 41, .92)); }
   .provider-runtime--broker { border-color: #4b83b8; background: linear-gradient(130deg, rgba(21, 53, 78, .94), rgba(13, 25, 41, .92)); }
+  .provider-runtime--techsupply { border-color: #3e759f; background: linear-gradient(130deg, rgba(17, 45, 68, .96), rgba(13, 25, 41, .92)); }
   .provider-runtime h2 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.15rem); letter-spacing: -.035em; }
   .provider-runtime__copy > p:not(.section-eyebrow):not(.provider-runtime__status) { color: #c4d2ca; line-height: 1.55; }
   .provider-runtime__status { display: grid; gap: .22rem; margin: 1.25rem 0; padding: .9rem 1rem; border: 1px solid #4f6a5c; border-radius: .8rem; background: rgba(7, 20, 21, .58); }
@@ -665,6 +721,11 @@ export const MISSION_DASHBOARD_STYLES = `
   .handoff-decision { margin-bottom: 0; padding: 1rem; border: 1px solid #68819a; border-radius: .7rem; background: rgba(30, 55, 76, .65); }
   .handoff-decision strong { display: block; margin-bottom: .3rem; color: #f0f6fc; }
   .handoff-decision--executed { border-color: #5b9b77; background: rgba(26, 73, 50, .68); }
+  .provider-result-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin: 1.1rem 0; }
+  .provider-result-summary > div { padding: .8rem; border: 1px solid #45647f; border-radius: .65rem; background: rgba(10, 33, 52, .66); }
+  .provider-result-summary dt { color: #9fb5c7; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .provider-result-summary dd { margin: .25rem 0 0; color: #f2f8fc; font-weight: 800; }
+  .provider-result-complete { padding: .85rem; border-left: .2rem solid #73d6a1; background: rgba(26, 73, 50, .55); }
   .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-bottom: 1.5rem; }
   .section-heading h2 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.15rem); letter-spacing: -.035em; }
   .section-heading > p { margin: 0; color: var(--muted); font-size: .83rem; font-weight: 700; }
@@ -755,7 +816,7 @@ export const MISSION_DASHBOARD_STYLES = `
     .mission-hero, .dashboard-section { border-radius: 1rem; }
     .mission-progress { grid-template-columns: 1fr; }
     .mission-facts, .requirement-grid { grid-template-columns: 1fr; }
-    .handoff-summary, .handoff-lifecycle { grid-template-columns: 1fr; }
+    .handoff-summary, .handoff-lifecycle, .provider-result-summary { grid-template-columns: 1fr; }
     .requirement-card--blocked, .requirement-card--requires-human { grid-column: span 1; }
     .section-heading { align-items: flex-start; flex-direction: column; gap: .5rem; }
     .activity-event { grid-template-columns: 2.8rem .8rem minmax(0, 1fr); gap: .65rem; }

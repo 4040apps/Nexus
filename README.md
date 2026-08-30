@@ -91,7 +91,7 @@ http://localhost:4400/?state=approval-required
 The dashboard renders canonical Goal State directly; the preview snapshots do not execute
 provider orchestration or commitment actions.
 
-Run the real OfficePro Brand Mode segment on two independent local origins:
+Run the live OfficePro → handoff → TechSupply segment on three independent local origins:
 
 ```bash
 pnpm demo:officepro
@@ -105,7 +105,11 @@ the normal provider-website fallback; it does not claim WebMCP success. The resu
 canonical 40% Goal State with MXN 155,000 used. Choose **Continue through NEXUS** to create
 a minimized `PROPOSED` Intent Handoff, review the remaining intent, and explicitly select
 **Authorize NEXUS to continue**. Only the resulting `EXECUTED` handoff enables Broker Mode;
-the demo then stops before provider discovery. Snapshot URLs remain available by adding
+then choose **Find computers**. TechSupply runs independently at `http://localhost:4600`,
+exposes `search_computers`, `check_inventory`, and `build_computer_package`, and fulfills 20
+computers for MXN 190,000 with delivery on 2026-09-22. The live checkpoint is 60% complete,
+MXN 345,000 used, and MXN 155,000 remaining; internet and security remain pending. The
+demo stops before Issue #22 internet routing. Snapshot URLs remain available by adding
 `?state=<name>`.
 
 Run the Issue #6 cross-origin reproduction harness with `pnpm spike:webmcp`. It starts the

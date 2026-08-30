@@ -306,10 +306,10 @@ Those remain behind injected provider services. The included development example
 a real `check_availability` WebMCP tool whose availability lookup is implemented by the
 example provider service.
 
-## OfficePro fulfillment and Intent Handoff reproduction
+## OfficePro, Intent Handoff, and TechSupply reproduction
 
-Issues #19 and #20 apply the validated cross-origin model to the first live hero segment
-and its explicit Intent Handoff. Run:
+Issues #19–#21 apply the validated cross-origin model through the first Broker Mode
+provider. Run:
 
 ```bash
 pnpm demo:officepro
@@ -332,8 +332,21 @@ catalog/stock records into NEXUS. After furniture fulfillment, **Continue throug
 creates a continuity-layer Intent Handoff; it is not an additional provider WebMCP tool.
 The user reviews the three remaining requirements and MXN 345,000 budget, then explicitly
 authorizes execution. Broker Mode remains locked through `PROPOSED` and `AUTHORIZED` and
-is enabled only by `EXECUTED`. The demo stops before discovering or invoking another
-provider.
+is enabled only by `EXECUTED`.
+
+After execution, select **Find computers**. The independent TechSupply provider at
+`http://localhost:4600` registers `search_computers`, `check_inventory`, and
+`build_computer_package` through `document.modelContext`, with `exposedTo` limited to NEXUS.
+NEXUS separately opts into that origin through `fromOrigins`, invokes only those three
+read/plan tools, and validates quantity, inventory, price, currency, and delivery before
+returning a Goal State update. The commitment-class `request_quote` tool is not part of the
+live sequence. With WebMCP unavailable, the normal TechSupply page remains usable and the
+dashboard labels the website transport rather than claiming WebMCP success.
+
+The expected result is computers fulfilled by TechSupply, 60% progress, MXN 345,000 used,
+MXN 155,000 remaining, and internet/security still pending. Provider catalog, item and
+package identifiers, stock, and unit price are not persisted by NEXUS. The reproduction
+stops before Issue #22 internet routing.
 
 ## Demo proof
 

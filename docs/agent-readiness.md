@@ -107,6 +107,11 @@ change is stated in the handoff panel and mission header rather than conveyed by
 timeline position alone. Broker routing remains disabled until the canonical executed
 handoff exists.
 
+The TechSupply continuation uses the same semantic button, live status, iframe permission,
+and visible transport labelling pattern. Its result states quantity, provider, cost,
+delivery, progress, and remaining work in text, while the canonical timeline exposes the
+discovery and three provider tool steps without relying on color.
+
 This check is suitable for CI, but it does not replace an external scan or browser audit.
 
 ## Deploy, scan, fix, and rescan
