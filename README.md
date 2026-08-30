@@ -49,7 +49,8 @@ The repository is a pnpm TypeScript workspace. Provider apps share their provide
 WebMCP contracts through `packages/provider-template` and `packages/webmcp`; mission
 continuity contracts live in `packages/goal-state` and `packages/intent-handoff`.
 Provider-owned catalog, price, stock, and availability data must remain inside each
-provider app as implementation is added.
+provider app. The deterministic hero fixtures keep the final mission at MXN 410,000 while
+preserving the FiberMX deadline failure, NetBusiness reroute, and SecureNow approval gate.
 
 ## Development
 
