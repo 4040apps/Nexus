@@ -271,6 +271,39 @@ assignment, MXN 190,000 mission cost, delivery summary, and audit events; item/p
 stock records, unit price, and complete results remain provider-owned. Internet and
 security stay unassigned and `PENDING`; Issue #22 begins internet routing.
 
+### FiberMX failure and NetBusiness recovery runtime
+
+Issue #22 continues only from the canonical 60% post-TechSupply state and the executed
+Intent Handoff. NEXUS selects both internet providers from thin `internet` category,
+Guadalajara service-area, origin, and capability metadata.
+
+```text
+NEXUS consumer/dashboard : http://localhost:4400
+             | iframe allow="tools"
+             +--> FiberMX provider     : http://localhost:4700
+             `--> NetBusiness provider : http://localhost:4800
+```
+
+Each independent provider registers `check_coverage`, `check_installation_date`, and
+`build_connectivity_offer` with `document.modelContext`, uses
+`exposedTo: ['http://localhost:4400']`, and owns its coverage, date, offer identifier,
+price, and constraint logic. NEXUS discovers through exact `fromOrigins` and validates all
+tool results before returning a Goal State change. The normal provider page invokes the
+same definitions when WebMCP is unavailable and the dashboard labels that fallback.
+
+**Find internet** moves internet through `PENDING -> DISCOVERED -> MATCHED -> PROPOSED ->
+BLOCKED`. FiberMX coverage is valid, but its 2026-10-08 installation misses the 2026-10-01
+human deadline. Goal State records `DELIVERY_DEADLINE`, the provider assignment, failure
+history, and activity; the uncommitted MXN 24,000 proposal is not included in budget used.
+The UI stops on this blocked state until the user selects **Recover with another provider**.
+
+Recovery invokes NetBusiness before changing canonical state. Its 2026-09-25 installation
+meets the deadline. The existing `rerouteRequirement` transition performs `BLOCKED ->
+MATCHED`, clears only the current blocker, and preserves the FiberMX blocker in
+`failureHistory` and the reroute event. NetBusiness then moves through `PROPOSED ->
+FULFILLED` at MXN 27,500. The checkpoint is 80% complete, MXN 372,500 used, MXN 127,500
+remaining; security alone remains unassigned and `PENDING`. SecureNow is outside Issue #22.
+
 ## Registry contract
 
 NEXUS registry is intentionally thin:

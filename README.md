@@ -91,7 +91,8 @@ http://localhost:4400/?state=approval-required
 The dashboard renders canonical Goal State directly; the preview snapshots do not execute
 provider orchestration or commitment actions.
 
-Run the live OfficePro → handoff → TechSupply segment on three independent local origins:
+Run the live OfficePro → handoff → TechSupply → FiberMX → NetBusiness segment on five
+independent local origins:
 
 ```bash
 pnpm demo:officepro
@@ -108,9 +109,15 @@ a minimized `PROPOSED` Intent Handoff, review the remaining intent, and explicit
 then choose **Find computers**. TechSupply runs independently at `http://localhost:4600`,
 exposes `search_computers`, `check_inventory`, and `build_computer_package`, and fulfills 20
 computers for MXN 190,000 with delivery on 2026-09-22. The live checkpoint is 60% complete,
-MXN 345,000 used, and MXN 155,000 remaining; internet and security remain pending. The
-demo stops before Issue #22 internet routing. Snapshot URLs remain available by adding
-`?state=<name>`.
+MXN 345,000 used, and MXN 155,000 remaining. Choose **Find internet** to invoke FiberMX at
+`http://localhost:4700`. Its valid Guadalajara coverage cannot overcome its provider-owned
+2026-10-08 installation date, so Goal State visibly records `BLOCKED` /
+`DELIVERY_DEADLINE` against the 2026-10-01 deadline without counting the offer toward used
+budget. Choose **Recover with another provider** to reroute only internet to NetBusiness at
+`http://localhost:4800`. Its 2026-09-25 installation fulfills internet for MXN 27,500;
+the checkpoint becomes 80%, MXN 372,500 used, and MXN 127,500 remaining while the FiberMX
+failure remains auditable and security stays pending. Snapshot URLs remain available by
+adding `?state=<name>`.
 
 Run the Issue #6 cross-origin reproduction harness with `pnpm spike:webmcp`. It starts the
 authorized consumer on port 4100, the independent provider on port 4200, and an unauthorized

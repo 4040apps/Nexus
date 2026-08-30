@@ -54,7 +54,7 @@ The NEXUS mission dashboard should show:
 - approval state;
 - Agent Activity Timeline.
 
-## Implemented live segments: OfficePro, Intent Handoff, and TechSupply
+## Implemented live segments through internet failure and recovery
 
 The live dashboard now begins where the user deliberately chose OfficePro. **Ask
 OfficePro** runs the four provider-owned furniture tools, visibly records their outcomes,
@@ -70,7 +70,15 @@ unchanged. **Find computers** then discovers TechSupply from thin metadata and i
 three provider-owned read/plan tools. Computers move through every canonical state to
 `FULFILLED`, producing the next checkpoint: 60% complete, MXN 345,000 used, MXN 155,000
 remaining, and delivery on 2026-09-22. Internet and security remain `PENDING`; internet
-routing and the deliberate FiberMX blocker begin in Issue #22.
+routing begins with **Find internet**. FiberMX confirms Guadalajara coverage but reports
+2026-10-08, so the dashboard stops on a prominent `DELIVERY_DEADLINE` blocker against the
+2026-10-01 deadline. Its proposal is not counted as spent budget.
+
+**Recover with another provider** reroutes only internet to NetBusiness. Its provider-owned
+2026-09-25 installation and MXN 27,500 plan meet the mission constraints. Internet becomes
+`FULFILLED`; the FiberMX failure remains visible in history and activity. The deterministic
+Issue #22 checkpoint is 80%, MXN 372,500 used, MXN 127,500 remaining, with security still
+`PENDING`. SecureNow and human approval begin only in Issue #23.
 
 ## Scope budget
 

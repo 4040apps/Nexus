@@ -20,6 +20,15 @@ import {
   proposeOfficeProIntentHandoff,
 } from './officepro-intent-handoff.js';
 import {
+  FIBERMX_PROVIDER_ORIGIN,
+  INTERNET_BROKER_TOOL_NAMES,
+  InternetBrokerModeError,
+  NETBUSINESS_PROVIDER_ORIGIN,
+  runFiberMxInternetRoute,
+  runNetBusinessInternetRecovery,
+} from './internet-broker-mode.js';
+import type { InternetRuntimeView } from './dashboard.js';
+import {
   TECHSUPPLY_BROKER_TOOL_NAMES,
   TECHSUPPLY_PROVIDER_ORIGIN,
   TechSupplyBrokerModeError,
@@ -33,6 +42,8 @@ let handoff: IntentHandoffLifecycle | undefined;
 let providerTransport: 'WEBMCP' | 'WEBSITE_FALLBACK' | undefined;
 let providerMessage = 'Waiting for the independent OfficePro origin to report its WebMCP capability.';
 let techSupplyProviderReady = false;
+let fiberMxProviderReady = false;
+let netBusinessProviderReady = false;
 let techSupplyView:
   | {
       providerOrigin: string;
@@ -41,11 +52,18 @@ let techSupplyView:
       transport?: 'WEBMCP' | 'WEBSITE_FALLBACK';
     }
   | undefined;
+let internetView: InternetRuntimeView | undefined;
 
 bindControls();
 window.addEventListener('message', (event: MessageEvent<unknown>) => {
   if (isTechSupplyReadyEvent(event)) {
     techSupplyProviderReady = true;
+  }
+  if (isInternetProviderReadyEvent(event, FIBERMX_PROVIDER_ORIGIN, 'FIBERMX_PROVIDER_READY')) {
+    fiberMxProviderReady = true;
+  }
+  if (isInternetProviderReadyEvent(event, NETBUSINESS_PROVIDER_ORIGIN, 'NETBUSINESS_PROVIDER_READY')) {
+    netBusinessProviderReady = true;
   }
 });
 
@@ -64,6 +82,12 @@ function bindControls(): void {
   });
   document.querySelector<HTMLButtonElement>('[data-route-computers]')?.addEventListener('click', () => {
     void runTechSupplyFlow();
+  });
+  document.querySelector<HTMLButtonElement>('[data-route-internet]')?.addEventListener('click', () => {
+    void runFiberMxFlow();
+  });
+  document.querySelector<HTMLButtonElement>('[data-recover-internet]')?.addEventListener('click', () => {
+    void runNetBusinessRecovery();
   });
 }
 
@@ -142,6 +166,131 @@ async function authorizeAndExecuteHandoff(): Promise<void> {
   }
 }
 
+async function runFiberMxFlow(): Promise<void> {
+  if (!handoff || handoff.status !== 'EXECUTED' || !canBeginBrokerRouting(handoff)) return;
+  fiberMxProviderReady = false;
+  internetView = {
+    fiberMxOrigin: FIBERMX_PROVIDER_ORIGIN,
+    netBusinessOrigin: NETBUSINESS_PROVIDER_ORIGIN,
+    phase: 'FIBER_RUNNING',
+    message: 'Discovering FiberMX and invoking its provider-owned coverage, installation, and offer tools.',
+  };
+  renderCurrent();
+  try {
+    await waitForInternetProvider('fibermx');
+    const frame = document.querySelector<HTMLIFrameElement>(`iframe[src="${FIBERMX_PROVIDER_ORIGIN}"]`);
+    const { invoker, transport } = await createCrossOriginProviderInvoker({
+      providerOrigin: FIBERMX_PROVIDER_ORIGIN,
+      toolNames: INTERNET_BROKER_TOOL_NAMES,
+      frame,
+      requestType: 'NEXUS_FIBERMX_TOOL_REQUEST',
+      responseType: 'FIBERMX_TOOL_RESULT',
+      requestIdPrefix: 'fibermx-request',
+      timeoutLabel: 'FiberMX',
+    });
+    const result = await runFiberMxInternetRoute(goalState, handoff, invoker);
+    goalState = result.goalState;
+    internetView = {
+      fiberMxOrigin: FIBERMX_PROVIDER_ORIGIN,
+      netBusinessOrigin: NETBUSINESS_PROVIDER_ORIGIN,
+      phase: 'BLOCKED',
+      message: result.blocker.message,
+      fiberMxTransport: transport,
+    };
+    renderCurrent();
+  } catch (error) {
+    renderInternetError(error);
+  }
+}
+
+async function runNetBusinessRecovery(): Promise<void> {
+  if (!handoff || handoff.status !== 'EXECUTED' || !canBeginBrokerRouting(handoff)) return;
+  const fiberMxTransport = internetView?.fiberMxTransport;
+  netBusinessProviderReady = false;
+  internetView = {
+    fiberMxOrigin: FIBERMX_PROVIDER_ORIGIN,
+    netBusinessOrigin: NETBUSINESS_PROVIDER_ORIGIN,
+    phase: 'NETBUSINESS_RUNNING',
+    message: 'Preserving the FiberMX failure while discovering a different provider for only internet.',
+    ...(fiberMxTransport ? { fiberMxTransport } : {}),
+  };
+  renderCurrent();
+  try {
+    await waitForInternetProvider('netbusiness');
+    const frame = document.querySelector<HTMLIFrameElement>(`iframe[src="${NETBUSINESS_PROVIDER_ORIGIN}"]`);
+    const { invoker, transport } = await createCrossOriginProviderInvoker({
+      providerOrigin: NETBUSINESS_PROVIDER_ORIGIN,
+      toolNames: INTERNET_BROKER_TOOL_NAMES,
+      frame,
+      requestType: 'NEXUS_NETBUSINESS_TOOL_REQUEST',
+      responseType: 'NETBUSINESS_TOOL_RESULT',
+      requestIdPrefix: 'netbusiness-request',
+      timeoutLabel: 'NetBusiness',
+    });
+    const result = await runNetBusinessInternetRecovery(goalState, handoff, invoker);
+    goalState = result.goalState;
+    internetView = {
+      fiberMxOrigin: FIBERMX_PROVIDER_ORIGIN,
+      netBusinessOrigin: NETBUSINESS_PROVIDER_ORIGIN,
+      phase: 'COMPLETE',
+      message: 'NetBusiness installed before the deadline; FiberMX remains in failure history.',
+      ...(fiberMxTransport ? { fiberMxTransport } : {}),
+      netBusinessTransport: transport,
+    };
+    renderCurrent();
+  } catch (error) {
+    renderInternetError(error);
+  }
+}
+
+function renderInternetError(error: unknown): void {
+  internetView = {
+    fiberMxOrigin: FIBERMX_PROVIDER_ORIGIN,
+    netBusinessOrigin: NETBUSINESS_PROVIDER_ORIGIN,
+    phase: 'ERROR',
+    message: error instanceof InternetBrokerModeError || error instanceof Error
+      ? error.message
+      : 'Internet Broker Mode could not complete.',
+    ...(internetView?.fiberMxTransport ? { fiberMxTransport: internetView.fiberMxTransport } : {}),
+  };
+  renderCurrent();
+}
+
+function waitForInternetProvider(provider: 'fibermx' | 'netbusiness'): Promise<void> {
+  const ready = provider === 'fibermx' ? fiberMxProviderReady : netBusinessProviderReady;
+  if (ready) return Promise.resolve();
+  const origin = provider === 'fibermx' ? FIBERMX_PROVIDER_ORIGIN : NETBUSINESS_PROVIDER_ORIGIN;
+  const type = provider === 'fibermx' ? 'FIBERMX_PROVIDER_READY' : 'NETBUSINESS_PROVIDER_READY';
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      window.removeEventListener('message', onReady);
+      reject(new Error(`The independent ${provider === 'fibermx' ? 'FiberMX' : 'NetBusiness'} provider did not become ready.`));
+    }, 5_000);
+    const onReady = (event: MessageEvent<unknown>): void => {
+      if (!isInternetProviderReadyEvent(event, origin, type)) return;
+      window.clearTimeout(timeout);
+      window.removeEventListener('message', onReady);
+      if (provider === 'fibermx') fiberMxProviderReady = true;
+      else netBusinessProviderReady = true;
+      resolve();
+    };
+    window.addEventListener('message', onReady);
+  });
+}
+
+function isInternetProviderReadyEvent(
+  event: MessageEvent<unknown>,
+  origin: string,
+  type: string,
+): boolean {
+  const frame = document.querySelector<HTMLIFrameElement>(`iframe[src="${origin}"]`);
+  return event.origin === origin && event.source === frame?.contentWindow && isMessageType(event.data, type);
+}
+
+function isMessageType(value: unknown, type: string): boolean {
+  return typeof value === 'object' && value !== null && 'type' in value && value.type === type;
+}
+
 async function runTechSupplyFlow(): Promise<void> {
   if (!handoff || handoff.status !== 'EXECUTED' || !canBeginBrokerRouting(handoff)) return;
   setTechSupplyWorkingStatus();
@@ -174,6 +323,12 @@ async function runTechSupplyFlow(): Promise<void> {
         transport === 'WEBMCP'
           ? 'Three genuine TechSupply WebMCP tools completed on the independent provider origin.'
           : 'TechSupply’s provider-owned website flow completed because WebMCP was unavailable.',
+    };
+    internetView = {
+      fiberMxOrigin: FIBERMX_PROVIDER_ORIGIN,
+      netBusinessOrigin: NETBUSINESS_PROVIDER_ORIGIN,
+      phase: 'READY',
+      message: 'Computers are complete. No internet provider has been contacted yet.',
     };
     renderCurrent();
   } catch (error) {
@@ -317,7 +472,7 @@ function render(view: {
     message: view.message,
     ...(view.transport ? { transport: view.transport } : {}),
     ...(handoff ? { handoff } : {}),
-  }, techSupplyView);
+  }, techSupplyView, internetView);
   bindControls();
 }
 

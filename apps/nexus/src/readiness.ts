@@ -126,6 +126,7 @@ function renderLlmsTxt(origin: string): string {
 - The authorized consumer invokes those tools on the provider origin; NEXUS does not proxy provider-owned catalog, pricing, stock, availability, or constraints.
 - Tool exposure follows the validated fromOrigins, exposedTo, and iframe allow="tools" browser permission model documented by this repository.
 - After an executed handoff, TechSupply fulfills computers through provider-owned read and planning tools without invoking its commitment-class quote tool.
+- FiberMX exposes a structured deadline failure; NEXUS preserves it while rerouting only internet to NetBusiness through the same independent-provider WebMCP model.
 
 ## Discovery
 

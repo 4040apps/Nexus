@@ -49,7 +49,7 @@ const server = createServer(async (request, response) => {
 
 server.listen(port, '127.0.0.1', () => {
   process.stdout.write(`NEXUS Mission Dashboard preview: ${origin}\n`);
-  process.stdout.write('Live OfficePro → handoff → TechSupply flow: open without a ?state fixture.\n');
+  process.stdout.write('Live OfficePro → handoff → TechSupply → FiberMX → NetBusiness flow: open without a ?state fixture.\n');
   process.stdout.write(`States: ${HERO_DASHBOARD_STATE_NAMES.join(', ')}\n`);
 });
 

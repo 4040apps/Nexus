@@ -23,6 +23,7 @@ export {
   renderAgentActivityTimeline,
   renderGoalGraph,
   renderIntentHandoff,
+  renderInternetRuntime,
   renderMissionDashboard,
   renderOfficeProRuntime,
   renderTechSupplyRuntime,
@@ -32,7 +33,7 @@ export {
   renderRequirementStatus,
 } from './dashboard.js';
 
-export type { MissionMode, OfficeProRuntimeView, TechSupplyRuntimeView } from './dashboard.js';
+export type { InternetRuntimeView, MissionMode, OfficeProRuntimeView, TechSupplyRuntimeView } from './dashboard.js';
 
 export {
   OFFICEPRO_BRAND_TOOL_NAMES,
@@ -63,6 +64,25 @@ export {
   discoverComputerProvider,
   runTechSupplyBrokerMode,
 } from './techsupply-broker-mode.js';
+
+export {
+  FIBERMX_DISCOVERY_METADATA,
+  FIBERMX_PROVIDER_ORIGIN,
+  INTERNET_BROKER_TOOL_NAMES,
+  InternetBrokerModeError,
+  NETBUSINESS_DISCOVERY_METADATA,
+  NETBUSINESS_PROVIDER_ORIGIN,
+  discoverInternetProvider,
+  runFiberMxInternetRoute,
+  runNetBusinessInternetRecovery,
+} from './internet-broker-mode.js';
+export type {
+  FiberMxBlockedResult,
+  InternetBrokerModeErrorCode,
+  InternetBrokerToolName,
+  InternetToolInvoker,
+  NetBusinessRecoveryResult,
+} from './internet-broker-mode.js';
 export type {
   TechSupplyBrokerModeErrorCode,
   TechSupplyBrokerModeResult,
