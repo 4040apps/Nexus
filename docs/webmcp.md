@@ -306,10 +306,10 @@ Those remain behind injected provider services. The included development example
 a real `check_availability` WebMCP tool whose availability lookup is implemented by the
 example provider service.
 
-## OfficePro, Intent Handoff, and TechSupply reproduction
+## OfficePro, Intent Handoff, TechSupply, and internet recovery reproduction
 
-Issues #19–#21 apply the validated cross-origin model through the first Broker Mode
-provider. Run:
+Issues #19–#22 apply the validated cross-origin model through the visible internet failure
+and recovery. Run:
 
 ```bash
 pnpm demo:officepro
@@ -343,10 +343,28 @@ returning a Goal State update. The commitment-class `request_quote` tool is not 
 live sequence. With WebMCP unavailable, the normal TechSupply page remains usable and the
 dashboard labels the website transport rather than claiming WebMCP success.
 
-The expected result is computers fulfilled by TechSupply, 60% progress, MXN 345,000 used,
-MXN 155,000 remaining, and internet/security still pending. Provider catalog, item and
-package identifiers, stock, and unit price are not persisted by NEXUS. The reproduction
-stops before Issue #22 internet routing.
+The computer checkpoint is 60% progress, MXN 345,000 used, MXN 155,000 remaining, and
+internet/security pending. Provider catalog, item and package identifiers, stock, and unit
+price are not persisted by NEXUS.
+
+Next select **Find internet**. FiberMX at `http://localhost:4700` exposes the three current
+read/plan tools `check_coverage`, `check_installation_date`, and
+`build_connectivity_offer`. NEXUS uses `fromOrigins: ['http://localhost:4700']`; FiberMX
+uses `exposedTo: ['http://localhost:4400']`. The provider confirms coverage but returns
+2026-10-08 against the 2026-10-01 deadline. The dashboard must stop at a visible
+`BLOCKED` / `DELIVERY_DEADLINE` state with 60% progress and unchanged used budget.
+
+Select **Recover with another provider**. NEXUS preserves the FiberMX failure, discovers
+NetBusiness from thin metadata, and invokes the same three provider-owned capabilities at
+`http://localhost:4800` using the exact-origin permission model. NetBusiness returns
+2026-09-25 and MXN 27,500. Expected final Issue #22 state: internet `FULFILLED`, FiberMX in
+failure history, 80% progress, MXN 372,500 used, MXN 127,500 remaining, and security still
+`PENDING`. Neither provider's offer identifier or complete tool results are stored by
+NEXUS. No commitment-class tool is invoked.
+
+Without WebMCP, both independent provider websites remain functional and NEXUS explicitly
+labels the normal website message transport. This is a reproducible fallback, not a claim
+of cross-origin WebMCP success.
 
 ## Demo proof
 

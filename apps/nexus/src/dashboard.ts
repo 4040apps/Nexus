@@ -24,6 +24,15 @@ export type TechSupplyRuntimeView = {
   transport?: 'WEBMCP' | 'WEBSITE_FALLBACK';
 };
 
+export type InternetRuntimeView = {
+  fiberMxOrigin: string;
+  netBusinessOrigin: string;
+  phase: 'READY' | 'FIBER_RUNNING' | 'BLOCKED' | 'NETBUSINESS_RUNNING' | 'COMPLETE' | 'ERROR';
+  message: string;
+  fiberMxTransport?: 'WEBMCP' | 'WEBSITE_FALLBACK';
+  netBusinessTransport?: 'WEBMCP' | 'WEBSITE_FALLBACK';
+};
+
 type StatusPresentation = {
   label: string;
   symbol: string;
@@ -84,14 +93,62 @@ export function renderMissionDashboard(
   goalState: GoalState,
   officeProRuntime?: OfficeProRuntimeView,
   techSupplyRuntime?: TechSupplyRuntimeView,
+  internetRuntime?: InternetRuntimeView,
 ): string {
   return `<article class="mission-dashboard" aria-labelledby="mission-title">
   ${renderMissionSummary(goalState)}
   ${officeProRuntime ? renderOfficeProRuntime(officeProRuntime, techSupplyRuntime !== undefined && techSupplyRuntime.phase !== 'READY') : ''}
   ${techSupplyRuntime ? renderTechSupplyRuntime(techSupplyRuntime) : ''}
+  ${internetRuntime ? renderInternetRuntime(internetRuntime) : ''}
   ${renderGoalGraph(goalState)}
   ${renderAgentActivityTimeline(goalState)}
 </article>`;
+}
+
+export function renderInternetRuntime(runtime: InternetRuntimeView): string {
+  const blocked = runtime.phase === 'BLOCKED';
+  const complete = runtime.phase === 'COMPLETE';
+  const busy = runtime.phase === 'FIBER_RUNNING' || runtime.phase === 'NETBUSINESS_RUNNING';
+  const transport = runtime.phase === 'READY'
+    ? 'Broker providers ready'
+    : [runtime.fiberMxTransport, runtime.netBusinessTransport].includes('WEBMCP')
+      ? 'Genuine cross-origin WebMCP'
+      : runtime.phase === 'ERROR'
+        ? 'Internet routing stopped safely'
+        : 'Normal provider website fallback';
+
+  return `<section class="dashboard-section provider-runtime provider-runtime--internet${blocked ? ' provider-runtime--blocked' : ''}" aria-labelledby="internet-runtime-heading" data-internet-phase="${runtime.phase}">
+    <div class="provider-runtime__copy">
+      <p class="section-eyebrow">Broker Mode · internet requirement</p>
+      <h2 id="internet-runtime-heading">${complete ? 'Internet recovered through NetBusiness' : blocked ? 'FiberMX misses the mission deadline' : 'Route business internet'}</h2>
+      <p>NEXUS uses only thin capability metadata to select providers. Coverage, installation dates, offer IDs, prices, and constraints remain on each independent provider origin.</p>
+      <p class="provider-runtime__status" role="status" aria-live="assertive" data-internet-status data-phase="${runtime.phase}">
+        <strong>${escapeHtml(transport)}</strong><span>${escapeHtml(runtime.message)}</span>
+      </p>
+      ${
+        blocked
+          ? `<div class="internet-blocker" role="alert">
+              <p class="section-eyebrow">Visible provider failure · DELIVERY_DEADLINE</p>
+              <h3>Oct 8 installation <span aria-hidden="true">→</span> misses Oct 1 deadline</h3>
+              <p>FiberMX has valid Guadalajara coverage. Its offer remains uncommitted, progress stays at 60%, and the failure is preserved in Goal State.</p>
+            </div>
+            <button class="primary-action" type="button" data-recover-internet>Recover with another provider</button>`
+          : complete
+            ? `<dl class="provider-result-summary" aria-label="Internet recovery result">
+                ${renderFact('Failed route', 'FiberMX · Oct 8')}
+                ${renderFact('Recovered route', 'NetBusiness · Sep 25')}
+                ${renderFact('Mission cost', 'MXN 27,500')}
+                ${renderFact('Remaining', 'Security')}
+              </dl>
+              <p class="provider-result-complete"><strong>Internet requirement fulfilled.</strong> Mission progress is now 80%; the FiberMX failure remains auditable.</p>`
+            : `<button class="primary-action" type="button" data-route-internet${busy ? ' disabled aria-busy="true"' : ''}>${busy ? 'Internet provider is working…' : runtime.phase === 'ERROR' ? 'Retry internet route' : 'Find internet'}</button>`
+      }
+    </div>
+    <div class="internet-origins" aria-label="Independent internet provider origins">
+      <div class="provider-runtime__origin"><div><span>First route · independent origin</span><code>${escapeHtml(runtime.fiberMxOrigin)}</code></div><iframe title="Independent FiberMX provider website" src="${escapeAttribute(runtime.fiberMxOrigin)}" allow="tools"></iframe></div>
+      <div class="provider-runtime__origin"><div><span>Recovery route · independent origin</span><code>${escapeHtml(runtime.netBusinessOrigin)}</code></div><iframe title="Independent NetBusiness provider website" src="${escapeAttribute(runtime.netBusinessOrigin)}" allow="tools"></iframe></div>
+    </div>
+  </section>`;
 }
 
 export function renderOfficeProRuntime(
@@ -682,6 +739,8 @@ export const MISSION_DASHBOARD_STYLES = `
   .provider-runtime { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(18rem, .85fr); gap: 2rem; align-items: stretch; border-color: #466737; background: linear-gradient(130deg, rgba(24, 46, 37, .9), rgba(13, 25, 41, .92)); }
   .provider-runtime--broker { border-color: #4b83b8; background: linear-gradient(130deg, rgba(21, 53, 78, .94), rgba(13, 25, 41, .92)); }
   .provider-runtime--techsupply { border-color: #3e759f; background: linear-gradient(130deg, rgba(17, 45, 68, .96), rgba(13, 25, 41, .92)); }
+  .provider-runtime--internet { border-color: #526d91; background: linear-gradient(130deg, rgba(28, 43, 66, .96), rgba(13, 25, 41, .92)); }
+  .provider-runtime--blocked { border-color: #b55865; box-shadow: inset .3rem 0 0 #ff6c78; background: linear-gradient(130deg, rgba(70, 23, 31, .94), rgba(13, 25, 41, .96)); }
   .provider-runtime h2 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.15rem); letter-spacing: -.035em; }
   .provider-runtime__copy > p:not(.section-eyebrow):not(.provider-runtime__status) { color: #c4d2ca; line-height: 1.55; }
   .provider-runtime__status { display: grid; gap: .22rem; margin: 1.25rem 0; padding: .9rem 1rem; border: 1px solid #4f6a5c; border-radius: .8rem; background: rgba(7, 20, 21, .58); }
@@ -693,6 +752,11 @@ export const MISSION_DASHBOARD_STYLES = `
   .provider-runtime__origin span { font-size: .66rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
   .provider-runtime__origin code { overflow-wrap: anywhere; color: #edffe3; font-size: .78rem; }
   .provider-runtime iframe { width: 100%; min-height: 16rem; border: 0; background: #f5f0e8; }
+  .internet-origins { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .internet-origins .provider-runtime__origin { min-height: 19rem; }
+  .internet-blocker { margin: 1.25rem 0; padding: 1rem 1.1rem; border: 1px solid #d86873; border-radius: .9rem; background: rgba(65, 13, 22, .82); }
+  .internet-blocker h3 { margin: 0; color: #ffd8dc; font-size: 1.22rem; }
+  .internet-blocker p:last-child { margin-bottom: 0; color: #edc4c8; line-height: 1.5; }
   .primary-action, .continuation-panel button, .handoff-actions button { padding: .85rem 1.1rem; border: 1px solid #c7fa6d; border-radius: .65rem; color: #0a1608; background: var(--accent); font: inherit; font-weight: 900; cursor: pointer; }
   .primary-action:focus-visible, .continuation-panel button:focus-visible, .handoff-actions button:focus-visible { outline: 3px solid #d7f5ff; outline-offset: 3px; }
   .primary-action:disabled { cursor: wait; opacity: .68; }
@@ -794,6 +858,7 @@ export const MISSION_DASHBOARD_STYLES = `
   .activity-empty strong { display: block; margin-bottom: .2rem; color: var(--text); }
 
   @media (max-width: 74rem) {
+    .internet-origins { grid-template-columns: 1fr; }
     .mission-hero { grid-template-columns: 1fr minmax(18rem, .55fr); }
     .mission-facts { grid-template-columns: repeat(2, 1fr); }
     .requirement-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
