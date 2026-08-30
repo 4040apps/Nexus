@@ -19,11 +19,34 @@ export type WebMcpRegisterToolOptions = {
   exposedTo?: readonly string[];
 };
 
+export type WebMcpGetToolsOptions = {
+  fromOrigins?: readonly string[];
+};
+
+export type WebMcpExecuteToolOptions = {
+  signal?: AbortSignal;
+};
+
+export type WebMcpRemoteTool = {
+  name: string;
+  origin: string;
+  title?: string;
+  description?: string;
+  inputSchema?: JsonSchema;
+  readonly [key: string]: unknown;
+};
+
 export type WebMcpModelContext = {
   registerTool: (
     tool: WebMcpToolDefinition<unknown, unknown>,
     options?: WebMcpRegisterToolOptions,
   ) => Promise<void>;
+  getTools?: (options?: WebMcpGetToolsOptions) => Promise<readonly WebMcpRemoteTool[]>;
+  executeTool?: (
+    tool: WebMcpRemoteTool,
+    input: string,
+    options?: WebMcpExecuteToolOptions,
+  ) => Promise<unknown>;
 };
 
 export type WebMcpDocument = {

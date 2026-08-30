@@ -24,6 +24,7 @@ NEXUS does not silently divert a user away from a provider. A user who deliberat
 
 ```text
 apps/
+  webmcp-cross-origin-spike/
   nexus/
   officepro/
   techsupply/
@@ -70,6 +71,11 @@ pnpm build
 
 Each workspace also exposes `dev`, `typecheck`, and `build` scripts so it can be
 worked on independently while consuming the shared contracts via `workspace:*`.
+
+Run the Issue #6 cross-origin reproduction harness with `pnpm spike:webmcp`. It starts the
+authorized consumer on port 4100, the independent provider on port 4200, and an unauthorized
+negative control on port 4300. Exact browser requirements and expected results are in
+[`docs/webmcp.md`](docs/webmcp.md#issue-6-spike-result-cross-origin-constrained).
 
 ## Sprint 0
 

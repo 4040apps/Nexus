@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "pnpm --parallel --filter './apps/**' dev",
+    "spike:webmcp": "pnpm --filter @nexus/webmcp-cross-origin-spike build && pnpm --filter @nexus/webmcp-cross-origin-spike start",
     "lint": "eslint .",
     "typecheck": "pnpm --recursive typecheck",
     "test": "vitest run",
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/node": "^22.10.0",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "tsup": "^8.5.0",
