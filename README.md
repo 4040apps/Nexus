@@ -74,8 +74,8 @@ worked on independently while consuming the shared contracts via `workspace:*`.
 
 Run the Issue #6 cross-origin reproduction harness with `pnpm spike:webmcp`. It starts the
 authorized consumer on port 4100, the independent provider on port 4200, and an unauthorized
-negative control on port 4300. Exact browser requirements and expected results are in
-[`docs/webmcp.md`](docs/webmcp.md#issue-6-spike-result-cross-origin-constrained).
+negative control on port 4300. Exact browser requirements and validated results are in
+[`docs/webmcp.md`](docs/webmcp.md#issue-6-spike-result-cross-origin-validated).
 
 ## Sprint 0
 
