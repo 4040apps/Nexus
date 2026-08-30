@@ -74,7 +74,11 @@ importers:
 
   packages/goal-state: {}
 
-  packages/intent-handoff: {}
+  packages/intent-handoff:
+    dependencies:
+      '@nexus/goal-state':
+        specifier: workspace:*
+        version: link:../goal-state
 
   packages/provider-template:
     dependencies:

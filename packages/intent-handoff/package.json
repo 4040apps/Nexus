@@ -16,5 +16,8 @@
     "dev": "tsup src/index.ts --format esm --dts --watch",
     "typecheck": "tsc --noEmit",
     "build": "tsup src/index.ts --format esm --dts --clean"
+  },
+  "dependencies": {
+    "@nexus/goal-state": "workspace:*"
   }
 }
