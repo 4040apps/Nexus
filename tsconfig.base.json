@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@nexus/goal-state": ["packages/goal-state/src/index.ts"],
+      "@nexus/intent-handoff": ["packages/intent-handoff/src/index.ts"],
+      "@nexus/provider-template": ["packages/provider-template/src/index.ts"],
+      "@nexus/webmcp": ["packages/webmcp/src/index.ts"]
+    }
+  }
+}

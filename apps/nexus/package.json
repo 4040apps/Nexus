@@ -1,0 +1,18 @@
+{
+  "name": "@nexus/app-nexus",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "build": "tsup src/index.ts --format esm --dts --clean"
+  },
+  "dependencies": {
+    "@nexus/goal-state": "workspace:*",
+    "@nexus/intent-handoff": "workspace:*",
+    "@nexus/webmcp": "workspace:*"
+  }
+}

@@ -20,7 +20,7 @@ WebMCP gives agents tools inside a website. NEXUS lets the user's intent continu
 
 NEXUS does not silently divert a user away from a provider. A user who deliberately starts on a provider site remains in **Brand Mode**. Continuation to other providers requires an explicit handoff/authorization into **Broker Mode**.
 
-## Planned workspace
+## Workspace
 
 ```text
 apps/
@@ -43,6 +43,33 @@ docs/
 AGENTS.md
 README.md
 ```
+
+The repository is a pnpm TypeScript workspace. Provider apps share their provider and
+WebMCP contracts through `packages/provider-template` and `packages/webmcp`; mission
+continuity contracts live in `packages/goal-state` and `packages/intent-handoff`.
+Provider-owned catalog, price, stock, and availability data must remain inside each
+provider app as implementation is added.
+
+## Development
+
+Requirements: Node.js 20 or newer and pnpm 11.
+
+```bash
+pnpm install
+pnpm dev
+```
+
+Run the complete foundation quality gates from the repository root:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+Each workspace also exposes `dev`, `typecheck`, and `build` scripts so it can be
+worked on independently while consuming the shared contracts via `workspace:*`.
 
 ## Sprint 0
 
