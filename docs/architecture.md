@@ -81,10 +81,27 @@ type Requirement = {
     required: boolean;
     approved: boolean;
   };
+  failureHistory?: Array<{
+    providerId?: string;
+    blocker: {
+      code: string;
+      message: string;
+    };
+    activityEventId: string;
+    occurredAt: string;
+  }>;
 };
 ```
 
 The implementation may refine this TypeScript shape, but semantic changes require documentation and tests.
+
+`budgetUsed` is derived from the estimated cost of `FULFILLED` requirements only;
+proposals and pending approvals are not commitments. `budgetRemaining` is the goal
+budget minus that derived amount. `progress` is the rounded percentage of requirements
+whose status is `FULFILLED` (or `0` when there are no requirements).
+
+State changes are immutable. The caller supplies stable event IDs and timestamps so
+each material transition can append a deterministic, auditable `ActivityEvent`.
 
 ## Intent Handoff contract
 
@@ -171,6 +188,9 @@ Failures are structured outcomes, not exceptions hidden from the mission UI. Exa
 ```
 
 NEXUS should preserve the failure in the timeline and reroute only the unresolved requirement.
+When a blocked requirement is rerouted, its current blocker is cleared as it returns to
+`MATCHED`, while the structured blocker remains in `failureHistory` and in the reroute
+timeline event.
 
 ## Human approval boundary
 
