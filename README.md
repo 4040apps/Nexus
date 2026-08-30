@@ -73,6 +73,24 @@ pnpm build
 Each workspace also exposes `dev`, `typecheck`, and `build` scripts so it can be
 worked on independently while consuming the shared contracts via `workspace:*`.
 
+Preview the Mission Dashboard after building the NEXUS package:
+
+```bash
+pnpm --filter @nexus/app-nexus build
+pnpm --filter @nexus/app-nexus preview:dashboard
+```
+
+Open `http://localhost:4400`. Deterministic visual snapshots are selected with the
+`state` query parameter: `initial`, `officepro-partial`, `fibermx-blocked`,
+`internet-rerouted`, `approval-required`, or `complete`. For example:
+
+```text
+http://localhost:4400/?state=approval-required
+```
+
+The dashboard renders canonical Goal State directly; the preview snapshots do not execute
+provider orchestration or commitment actions.
+
 Run the Issue #6 cross-origin reproduction harness with `pnpm spike:webmcp`. It starts the
 authorized consumer on port 4100, the independent provider on port 4200, and an unauthorized
 negative control on port 4300. Exact browser requirements and validated results are in

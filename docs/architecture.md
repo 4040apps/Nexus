@@ -103,6 +103,42 @@ whose status is `FULFILLED` (or `0` when there are no requirements).
 State changes are immutable. The caller supplies stable event IDs and timestamps so
 each material transition can append a deterministic, auditable `ActivityEvent`.
 
+## Mission Dashboard presentation boundary
+
+The NEXUS Mission Dashboard is a pure, framework-independent presentation layer over
+canonical `GoalState`:
+
+```text
+GoalState
+   |
+   v
+MissionDashboard
+   +-- MissionSummary + MissionProgress
+   +-- GoalGraph
+   |    `-- RequirementCard
+   `-- AgentActivityTimeline
+```
+
+The renderer reads mission constraints, derived progress and budget metrics, requirement
+statuses, provider assignments, costs, blockers, approvals, failure history, and activity
+events directly from Goal State. It does not mutate the mission and does not define a
+UI-specific mission model. Current mode is presented only when canonical state supports
+the inference: an OfficePro assignment indicates Brand Mode, while an executed Intent
+Handoff activity event indicates Broker Mode.
+
+Six deterministic Goal State snapshots exercise the presentation without implementing
+orchestration: initial, OfficePro partial fulfillment, FiberMX blocked, internet rerouted,
+SecureNow awaiting approval, and complete. These snapshots use the existing Goal State
+and Intent Handoff state machines. Costs stored in them represent provider results already
+recorded in Goal State; they are not a NEXUS provider catalog.
+
+The activity timeline sorts and renders canonical activity events. Optional event details
+may provide a provider tool name and human-readable summary, allowing WebMCP invocation,
+deadline failure, reroute, approval, and fulfillment moments to be legible without adding
+new activity action types or hard-coded static timeline markup.
+
+![NEXUS Mission Dashboard showing the approval-required Goal State](assets/issue-18-mission-dashboard.jpg)
+
 ## Intent Handoff contract
 
 An Intent Handoff has three explicit lifecycle stages:

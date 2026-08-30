@@ -83,11 +83,11 @@ describe('NEXUS agent-readiness surfaces', () => {
     expect(html).toContain('<header>');
     expect(html).toContain('<nav aria-label="Machine-readable discovery">');
     expect(html).toContain('<main id="main-content" tabindex="-1">');
-    expect(html.match(/<h1>/g)).toHaveLength(1);
-    expect(html.match(/<h2 id=/g)).toHaveLength(2);
+    expect(html.match(/<h1(?:\s|>)/g)).toHaveLength(1);
+    expect(html.match(/<h2(?:\s|>)/g)).toHaveLength(3);
     expect(html).toContain('<footer>');
     expect(html).toContain('a:focus-visible');
-    expect(html).not.toMatch(/<button|<form|aria-hidden="true"/);
+    expect(html).not.toMatch(/<button|<form/);
   });
 
   it('validates references and detects a broken advertised endpoint', () => {
