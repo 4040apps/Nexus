@@ -190,6 +190,25 @@ Prices, stock, installation slots and catalogs remain provider-owned and are que
 
 Synthetic provider data should create meaningful tradeoffs rather than a trivial all-success path.
 
+### Deterministic hero fixtures
+
+Each provider app owns its own minimal fixture data and exposes it through genuine
+provider-template tools. NEXUS may retain only the thin discovery metadata derived from
+those tools; it does not store these prices, stock levels, or dates.
+
+| Provider | Deterministic behavior | Mission cost |
+| --- | --- | ---: |
+| OfficePro | 20 desks for MXN 80,000 and 20 chairs for MXN 75,000; delivery 2026-09-20 | MXN 155,000 |
+| TechSupply | 20 business laptops in stock; delivery 2026-09-22 | MXN 190,000 |
+| FiberMX | Guadalajara coverage, but earliest installation 2026-10-08 produces `BLOCKED` / `DELIVERY_DEADLINE` | Not committed |
+| NetBusiness | Guadalajara coverage and installation 2026-09-25 after reroute | MXN 27,500 |
+| SecureNow | Package installation 2026-09-27; commitment pauses at `REQUIRES_HUMAN` until approval | MXN 37,500 |
+
+The approved final mission cost is exactly MXN 410,000, leaving MXN 90,000 of the
+MXN 500,000 budget. The FiberMX blocker remains in requirement failure history after the
+NetBusiness reroute, and the SecureNow approval remains in the requirement and activity
+timeline.
+
 ## State transitions
 
 ```text
