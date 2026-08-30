@@ -165,8 +165,10 @@ identifiers, and the provider's complete result objects stay inside OfficePro.
 The successful runtime applies `PENDING -> DISCOVERED -> MATCHED -> PROPOSED -> FULFILLED`
 to desks and chairs, producing 40% progress and MXN 155,000 used / MXN 345,000 remaining.
 Computers, internet, and security remain unassigned and `PENDING`. The UI offers
-**Continue through NEXUS**, but Issue #19 records no handoff activity and never enters
-Broker Mode.
+**Continue through NEXUS**. Selecting it now creates a `PROPOSED` Intent Handoff and shows
+the minimized payload before asking for explicit human authorization. Authorization and
+execution append the canonical audit events; only the executed handoff changes the visible
+mode to Broker Mode. No provider discovery or routing occurs in this segment.
 
 ## Intent Handoff contract
 
@@ -203,7 +205,6 @@ type IntentHandoff = {
   executedAt: string;
   constraints: {
     city: string;
-    employees: number;
     deadline: string;
     remainingBudget: number;
     currency: 'MXN';
@@ -223,6 +224,22 @@ Broker routing is allowed only for a validated `EXECUTED` handoff with explicit 
 
 The Goal State timeline records `HANDOFF_PROPOSED`, `HANDOFF_AUTHORIZED`, and
 `HANDOFF_EXECUTED` as goal-level audit events; these do not change requirement statuses.
+
+The live OfficePro continuation uses that lifecycle directly:
+
+```text
+Continue through NEXUS
+  -> PROPOSED (approval UI; Brand Mode; routing locked)
+  -> explicit human authorization
+  -> AUTHORIZED (routing still locked)
+  -> EXECUTED (Broker Mode enabled; routing allowed)
+```
+
+The payload contains only computers, internet, and security plus Guadalajara, the mission
+deadline, MXN 345,000 remaining, and the currency. It excludes fulfilled furniture,
+employee count, provider assignments, catalog/item/package identifiers, stock, unit prices,
+complete provider results, and activity history. Issue #20 stops immediately after the
+mode change; TechSupply and all other providers remain untouched.
 
 ## Registry contract
 

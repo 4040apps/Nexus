@@ -3,6 +3,8 @@ import type {
   WebMcpModelContext,
   WebMcpRemoteTool,
 } from '@nexus/webmcp';
+import { canBeginBrokerRouting } from '@nexus/intent-handoff';
+import type { IntentHandoffLifecycle } from '@nexus/intent-handoff';
 
 import {
   renderAgentActivityTimeline,
@@ -20,11 +22,19 @@ import type {
   OfficeProBrandToolName,
   OfficeProToolInvoker,
 } from './officepro-brand-mode.js';
+import {
+  authorizeOfficeProIntentHandoff,
+  executeOfficeProIntentHandoff,
+  proposeOfficeProIntentHandoff,
+} from './officepro-intent-handoff.js';
 
 const PROVIDER_ORIGIN = 'http://localhost:4500';
 const main = document.querySelector<HTMLElement>('#main-content');
 let goalState = createInitialHeroGoalState();
 let requestSequence = 0;
+let handoff: IntentHandoffLifecycle | undefined;
+let providerTransport: 'WEBMCP' | 'WEBSITE_FALLBACK' | undefined;
+let providerMessage = 'Waiting for the independent OfficePro origin to report its WebMCP capability.';
 
 bindControls();
 
@@ -33,12 +43,13 @@ function bindControls(): void {
     void runFlow();
   });
   document.querySelector<HTMLButtonElement>('[data-continue-nexus]')?.addEventListener('click', () => {
-    const status = document.querySelector<HTMLElement>('[data-officepro-status]');
-    if (status) {
-      status.dataset.phase = 'READY';
-      status.innerHTML =
-        '<strong>Explicit handoff not executed</strong><span>Your continuation choice is visible, but Broker Mode belongs to Issue #20.</span>';
-    }
+    proposeHandoff();
+  });
+  document.querySelector<HTMLButtonElement>('[data-authorize-handoff]')?.addEventListener('click', () => {
+    void authorizeAndExecuteHandoff();
+  });
+  document.querySelector<HTMLButtonElement>('[data-stay-officepro]')?.addEventListener('click', () => {
+    stayWithOfficePro();
   });
 }
 
@@ -59,13 +70,15 @@ async function runFlow(): Promise<void> {
       },
     });
     goalState = result.goalState;
+    providerTransport = transport;
+    providerMessage =
+      transport === 'WEBMCP'
+        ? 'All four genuine WebMCP invocations completed on the OfficePro origin.'
+        : 'OfficePro’s provider-owned website flow completed because WebMCP was unavailable.';
     render({
       phase: 'COMPLETE',
-      transport,
-      message:
-        transport === 'WEBMCP'
-          ? 'All four genuine WebMCP invocations completed on the OfficePro origin.'
-          : 'OfficePro’s provider-owned website flow completed because WebMCP was unavailable.',
+      transport: providerTransport,
+      message: providerMessage,
     });
   } catch (error) {
     const message =
@@ -74,6 +87,66 @@ async function runFlow(): Promise<void> {
         : 'OfficePro Brand Mode could not complete.';
     render({ phase: 'ERROR', message });
   }
+}
+
+function proposeHandoff(): void {
+  try {
+    const proposed = proposeOfficeProIntentHandoff(goalState);
+    goalState = proposed.goalState;
+    handoff = proposed.handoff;
+    renderCurrent();
+  } catch (error) {
+    renderLifecycleError(error);
+  }
+}
+
+async function authorizeAndExecuteHandoff(): Promise<void> {
+  if (!handoff || handoff.status !== 'PROPOSED') return;
+
+  try {
+    const authorized = authorizeOfficeProIntentHandoff(goalState, handoff);
+    goalState = authorized.goalState;
+    handoff = authorized.handoff;
+    renderCurrent();
+
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+
+    const executed = executeOfficeProIntentHandoff(goalState, authorized.handoff);
+    if (!canBeginBrokerRouting(executed.handoff)) {
+      throw new Error('Broker Mode cannot start until the authorized handoff is executed.');
+    }
+    goalState = executed.goalState;
+    handoff = executed.handoff;
+    renderCurrent();
+  } catch (error) {
+    renderLifecycleError(error);
+  }
+}
+
+function stayWithOfficePro(): void {
+  const decision = document.querySelector<HTMLElement>('.handoff-assurance');
+  if (decision) {
+    decision.setAttribute('role', 'status');
+    decision.setAttribute('aria-live', 'polite');
+    decision.innerHTML =
+      '<strong>Staying with OfficePro.</strong> No authorization was granted. Brand Mode remains active and no provider was contacted.';
+  }
+}
+
+function renderCurrent(): void {
+  render({
+    phase: 'COMPLETE',
+    message: providerMessage,
+    ...(providerTransport ? { transport: providerTransport } : {}),
+  });
+}
+
+function renderLifecycleError(error: unknown): void {
+  render({
+    phase: 'ERROR',
+    message: error instanceof Error ? error.message : 'Intent Handoff could not complete.',
+    ...(providerTransport ? { transport: providerTransport } : {}),
+  });
 }
 
 function renderLiveGoalState(): void {
@@ -201,6 +274,7 @@ function render(view: {
     phase: view.phase,
     message: view.message,
     ...(view.transport ? { transport: view.transport } : {}),
+    ...(handoff ? { handoff } : {}),
   });
   bindControls();
 }

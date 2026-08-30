@@ -56,7 +56,6 @@ describe('Intent Handoff', () => {
       destination: { type: 'NEXUS', mode: 'BROKER' },
       constraints: {
         city: 'Guadalajara',
-        employees: 20,
         deadline: '2026-10-01',
         remainingBudget: 345_000,
         currency: 'MXN',
@@ -96,6 +95,12 @@ describe('Intent Handoff', () => {
     expect(executed.handoff.remainingRequirements.map((item) => item.id)).not.toContain('desks');
     expect(executed.handoff.remainingRequirements.map((item) => item.id)).not.toContain('chairs');
     expect(executed.handoff.constraints.remainingBudget).toBe(345_000);
+    expect(Object.keys(executed.handoff.constraints).sort()).toEqual([
+      'city',
+      'currency',
+      'deadline',
+      'remainingBudget',
+    ]);
 
     const handoffEvents = executed.goalState.activity.filter((event) =>
       event.action.startsWith('HANDOFF_'),

@@ -116,7 +116,7 @@ function renderLlmsTxt(origin: string): string {
 ## Product model
 
 - Brand Mode keeps work within the provider the user deliberately chose.
-- Broker Mode starts only after an explicit Intent Handoff authorizes NEXUS to continue remaining requirements.
+- Broker Mode starts only after an explicitly authorized Intent Handoff is executed for the remaining requirements.
 - Provider failures and reroutes stay visible in the Goal State activity timeline.
 - Purchases, reservations, signatures, and other commitment operations require explicit human approval.
 

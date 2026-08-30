@@ -22,6 +22,7 @@ export {
   deriveMissionMode,
   renderAgentActivityTimeline,
   renderGoalGraph,
+  renderIntentHandoff,
   renderMissionDashboard,
   renderOfficeProRuntime,
   renderMissionProgress,
@@ -45,6 +46,13 @@ export type {
   OfficeProBrandToolName,
   OfficeProToolInvoker,
 } from './officepro-brand-mode.js';
+
+export {
+  OFFICEPRO_HANDOFF_ID,
+  authorizeOfficeProIntentHandoff,
+  executeOfficeProIntentHandoff,
+  proposeOfficeProIntentHandoff,
+} from './officepro-intent-handoff.js';
 
 export {
   HERO_DASHBOARD_STATE_NAMES,
