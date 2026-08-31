@@ -171,6 +171,13 @@ describe('deterministic provider-owned hero fixtures', () => {
           approved: true,
           approvalId: 'approval-securenow-1',
           approvedAt: '2026-09-01T12:26:00.000Z',
+          goalId: 'goal-office-guadalajara',
+          requirementId: 'security',
+          providerId: 'securenow',
+          expectedTotal: 37_500,
+          currency: 'MXN',
+          action: 'request_installation',
+          approvalScopeId: 'goal-office-guadalajara:security:securenow:37500:request_installation',
         },
       }),
     );
@@ -311,6 +318,13 @@ describe('deterministic provider-owned hero fixtures', () => {
       approved: true as const,
       approvalId: 'approval-securenow-hero',
       approvedAt: nextOccurredAt(state),
+      goalId: 'goal-office-guadalajara',
+      requirementId: 'security',
+      providerId: 'securenow',
+      expectedTotal: 37_500,
+      currency: 'MXN' as const,
+      action: 'request_installation',
+      approvalScopeId: 'goal-office-guadalajara:security:securenow:37500:request_installation',
     };
     success(
       await secureNowRequestInstallation.execute({

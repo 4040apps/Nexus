@@ -304,6 +304,38 @@ MATCHED`, clears only the current blocker, and preserves the FiberMX blocker in
 FULFILLED` at MXN 27,500. The checkpoint is 80% complete, MXN 372,500 used, MXN 127,500
 remaining; security alone remains unassigned and `PENDING`. SecureNow is outside Issue #22.
 
+### SecureNow human approval runtime
+
+Issue #23 starts only from the canonical 80% post-NetBusiness Goal State and the executed
+Intent Handoff. NEXUS discovers SecureNow through thin security capability metadata and
+embeds its independent origin:
+
+```text
+NEXUS consumer/dashboard : http://localhost:4400
+             | iframe allow="tools"
+             v
+SecureNow provider       : http://localhost:4900
+```
+
+SecureNow registers `assess_security_requirement` (READ), `build_security_package` (PLAN),
+and `request_installation` (COMMIT) with `document.modelContext` and
+`exposedTo: ['http://localhost:4400']`. Assessment, package/service identifiers, contents,
+availability, pricing, installation details, and commitment execution stay provider-owned.
+NEXUS persists no package or confirmation identifier.
+
+**Find security** invokes only READ/PLAN. After validating the MXN 37,500 proposal and Sep
+27 installation, NEXUS records `PENDING -> DISCOVERED -> MATCHED -> PROPOSED ->
+REQUIRES_HUMAN` and stops at 80% / MXN 372,500 used. The earlier Intent Handoff authorizes
+Broker Mode, not this commitment. `request_installation` has zero invocations at this stop.
+
+**Approve and continue** creates one canonical `REQUIREMENT_APPROVAL_RECORDED` event while
+security remains `REQUIRES_HUMAN`. Its approval binds goal, requirement, provider,
+expected MXN 37,500 total, currency, action, and stable proposal scope. Only then is
+`request_installation` invoked on the SecureNow origin. A validated result applies
+`REQUIRES_HUMAN -> FULFILLED`, reaching 100%, MXN 410,000 used, and MXN 90,000 remaining.
+Malformed or stale approval and malformed provider results fail closed. The final Goal
+State still preserves the FiberMX failure history and NetBusiness recovery activity.
+
 ## Registry contract
 
 NEXUS registry is intentionally thin:

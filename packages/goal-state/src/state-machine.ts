@@ -7,6 +7,7 @@ import type {
   Requirement,
   RequirementStatus,
   RequirementTransitionInput,
+  RecordRequirementApprovalInput,
   RerouteRequirementInput,
 } from './types.js';
 
@@ -122,6 +123,88 @@ export function rerouteRequirement(
     ...input,
     toStatus: 'MATCHED',
   });
+}
+
+export function recordRequirementApproval(
+  goalState: GoalState,
+  input: RecordRequirementApprovalInput,
+): GoalState {
+  assertUniqueEvent(goalState, input.eventId);
+  const requirementIndex = goalState.requirements.findIndex(
+    (requirement) => requirement.id === input.requirementId,
+  );
+  const current = goalState.requirements[requirementIndex];
+  if (!current) {
+    throw new GoalStateError('REQUIREMENT_NOT_FOUND', `Requirement "${input.requirementId}" does not exist.`);
+  }
+  if (
+    current.status !== 'REQUIRES_HUMAN' ||
+    current.approval?.required !== true ||
+    current.approval.approved ||
+    !current.providerId
+  ) {
+    throw new GoalStateError(
+      'APPROVAL_REQUIRED',
+      `Requirement "${current.id}" is not waiting for human approval.`,
+      { requirementId: current.id },
+    );
+  }
+  assertApprovalBinding(goalState, current, input);
+  const next: Requirement = { ...current, approval: { ...input.approval } };
+  const requirements = goalState.requirements.map((requirement, index) =>
+    index === requirementIndex ? next : requirement,
+  );
+  return {
+    ...goalState,
+    requirements,
+    activity: [
+      ...goalState.activity,
+      {
+        id: input.eventId,
+        occurredAt: input.occurredAt,
+        requirementId: current.id,
+        providerId: current.providerId,
+        action: 'REQUIREMENT_APPROVAL_RECORDED',
+        fromStatus: 'REQUIRES_HUMAN',
+        toStatus: 'REQUIRES_HUMAN',
+        outcome: 'APPROVED',
+        details: {
+          ...input.details,
+          approvalId: input.approval.approvalId,
+          approvalScopeId: input.approval.approvalScopeId,
+          action: input.approval.action,
+          expectedTotal: input.approval.expectedTotal,
+          currency: input.approval.currency,
+        },
+      },
+    ],
+    ...deriveGoalMetrics(requirements, goalState.constraints.budget),
+  };
+}
+
+function assertApprovalBinding(
+  goalState: GoalState,
+  requirement: Requirement,
+  input: RecordRequirementApprovalInput,
+): void {
+  const approval = input.approval;
+  if (
+    approval.goalId !== goalState.id ||
+    approval.requirementId !== requirement.id ||
+    approval.providerId !== requirement.providerId ||
+    approval.expectedTotal !== requirement.estimatedCost ||
+    approval.currency !== goalState.constraints.currency ||
+    approval.action.trim().length === 0 ||
+    approval.approvalScopeId.trim().length === 0 ||
+    approval.approvalId.trim().length === 0 ||
+    approval.approvedAt.trim().length === 0
+  ) {
+    throw new GoalStateError(
+      'APPROVAL_REQUIRED',
+      `Approval is not bound to the current ${requirement.id} proposal.`,
+      { requirementId: requirement.id, providerId: requirement.providerId },
+    );
+  }
 }
 
 function buildNextRequirement(

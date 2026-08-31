@@ -1,5 +1,6 @@
 import {
   createGoalState,
+  recordRequirementApproval,
   rerouteRequirement,
   transitionRequirement,
 } from '@nexus/goal-state';
@@ -193,10 +194,41 @@ export function createHeroDashboardStates(): HeroDashboardStates {
     },
   });
 
-  const complete = move(approvalRequired, 'security', 'FULFILLED', {
-    approval: { required: true, approved: true },
-    details: {
+  const approvedSecurity = recordRequirementApproval(approvalRequired, {
+    requirementId: 'security',
+    approval: {
+      required: true,
+      approved: true,
       approvalId: 'approval-securenow-hero',
+      approvedAt: nextOccurredAt(approvalRequired),
+      goalId: HERO_MISSION.id,
+      requirementId: 'security',
+      providerId: 'securenow',
+      expectedTotal: 37_500,
+      currency: 'MXN',
+      action: 'request_installation',
+      approvalScopeId: 'goal-office-guadalajara:security:securenow:37500:request_installation',
+    },
+    eventId: nextEventId(approvalRequired),
+    occurredAt: nextOccurredAt(approvalRequired),
+    details: { summary: 'Human approved SecureNow installation.' },
+  });
+  const complete = move(approvedSecurity, 'security', 'FULFILLED', {
+    approval: {
+      required: true,
+      approved: true,
+      approvalId: 'approval-securenow-hero',
+      approvedAt: nextOccurredAt(approvalRequired),
+      goalId: HERO_MISSION.id,
+      requirementId: 'security',
+      providerId: 'securenow',
+      expectedTotal: 37_500,
+      currency: 'MXN',
+      action: 'request_installation',
+      approvalScopeId: 'goal-office-guadalajara:security:securenow:37500:request_installation',
+    },
+    details: {
+      toolName: 'request_installation',
       summary: 'Human approval granted. Mission complete within budget and deadline.',
     },
   });

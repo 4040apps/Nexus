@@ -77,6 +77,9 @@ importers:
       '@nexus/provider-template':
         specifier: workspace:*
         version: link:../../packages/provider-template
+      '@nexus/webmcp':
+        specifier: workspace:*
+        version: link:../../packages/webmcp
 
   apps/techsupply:
     dependencies:

@@ -91,7 +91,8 @@ http://localhost:4400/?state=approval-required
 The dashboard renders canonical Goal State directly; the preview snapshots do not execute
 provider orchestration or commitment actions.
 
-Run the live OfficePro → handoff → TechSupply → FiberMX → NetBusiness segment on five
+Run the complete live OfficePro → handoff → TechSupply → FiberMX → NetBusiness → SecureNow
+hero on six
 independent local origins:
 
 ```bash
@@ -117,7 +118,12 @@ budget. Choose **Recover with another provider** to reroute only internet to Net
 `http://localhost:4800`. Its 2026-09-25 installation fulfills internet for MXN 27,500;
 the checkpoint becomes 80%, MXN 372,500 used, and MXN 127,500 remaining while the FiberMX
 failure remains auditable and security stays pending. Snapshot URLs remain available by
-adding `?state=<name>`.
+adding `?state=<name>`. Choose **Find security** to run SecureNow’s provider-owned READ and
+PLAN tools at `http://localhost:4900`. The dashboard stops at `REQUIRES_HUMAN` with 80%
+progress and unchanged used budget. Only **Approve and continue** records a proposal-bound
+human approval and invokes the commitment-class `request_installation` tool. Success
+finishes the mission at 100%, MXN 410,000 used, and MXN 90,000 remaining while the
+FiberMX failure, NetBusiness recovery, and SecureNow approval remain visible.
 
 Run the Issue #6 cross-origin reproduction harness with `pnpm spike:webmcp`. It starts the
 authorized consumer on port 4100, the independent provider on port 4200, and an unauthorized

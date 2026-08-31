@@ -27,13 +27,14 @@ export {
   renderMissionDashboard,
   renderOfficeProRuntime,
   renderTechSupplyRuntime,
+  renderSecurityRuntime,
   renderMissionProgress,
   renderMissionSummary,
   renderRequirementCard,
   renderRequirementStatus,
 } from './dashboard.js';
 
-export type { InternetRuntimeView, MissionMode, OfficeProRuntimeView, TechSupplyRuntimeView } from './dashboard.js';
+export type { InternetRuntimeView, MissionMode, OfficeProRuntimeView, SecurityRuntimeView, TechSupplyRuntimeView } from './dashboard.js';
 
 export {
   OFFICEPRO_BRAND_TOOL_NAMES,
@@ -76,6 +77,29 @@ export {
   runFiberMxInternetRoute,
   runNetBusinessInternetRecovery,
 } from './internet-broker-mode.js';
+
+export {
+  SECURENOW_APPROVAL_SCOPE_ID,
+  SECURENOW_COMMIT_TOOL_NAME,
+  SECURENOW_DISCOVERY_METADATA,
+  SECURENOW_PLANNING_TOOL_NAMES,
+  SECURENOW_PROVIDER_ORIGIN,
+  SecureNowBrokerModeError,
+  createSecureNowApproval,
+  declineSecureNowApproval,
+  discoverSecurityProvider,
+  executeSecureNowInstallation,
+  recordSecureNowApproval,
+  runSecureNowPlanning,
+} from './securenow-broker-mode.js';
+export type {
+  BoundSecureNowApproval,
+  SecureNowBrokerModeErrorCode,
+  SecureNowCommitmentResult,
+  SecureNowPlanningResult,
+  SecureNowProposal,
+  SecureNowToolInvoker,
+} from './securenow-broker-mode.js';
 export type {
   FiberMxBlockedResult,
   InternetBrokerModeErrorCode,

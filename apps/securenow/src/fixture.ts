@@ -144,9 +144,27 @@ function readApproval(value: unknown): HumanApproval | undefined {
     isRecord(value) &&
     value.approved === true &&
     typeof value.approvalId === 'string' &&
-    typeof value.approvedAt === 'string'
+    typeof value.approvedAt === 'string' &&
+    value.goalId === 'goal-office-guadalajara' &&
+    value.requirementId === 'security' &&
+    value.providerId === 'securenow' &&
+    value.expectedTotal === packagePrice &&
+    value.currency === 'MXN' &&
+    value.action === 'request_installation' &&
+    value.approvalScopeId === 'goal-office-guadalajara:security:securenow:37500:request_installation'
   ) {
-    return { approved: true, approvalId: value.approvalId, approvedAt: value.approvedAt };
+    return {
+      approved: true,
+      approvalId: value.approvalId,
+      approvedAt: value.approvedAt,
+      goalId: value.goalId,
+      requirementId: value.requirementId,
+      providerId: value.providerId,
+      expectedTotal: value.expectedTotal,
+      currency: value.currency,
+      action: value.action,
+      approvalScopeId: value.approvalScopeId,
+    };
   }
   return undefined;
 }
