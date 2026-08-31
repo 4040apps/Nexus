@@ -336,6 +336,25 @@ expected MXN 37,500 total, currency, action, and stable proposal scope. Only the
 Malformed or stale approval and malformed provider results fail closed. The final Goal
 State still preserves the FiberMX failure history and NetBusiness recovery activity.
 
+### Complete hero demo hardening
+
+`pnpm demo:hero` is the canonical Sprint 1 entry point. A small Node launcher starts the
+six compiled HTTP servers, polls their exact origins, and declares readiness only after all
+respond. It terminates the group when a required server fails; no container platform,
+proxy, or new persistence layer is involved.
+
+The browser runtime permits only one judge action in flight. Every re-rendered control is
+disabled while that action settles, preventing rapid clicks from duplicating transitions
+or invoking the SecureNow commitment twice. Provider errors preserve the last valid Goal
+State and expose only state-appropriate retries. A commitment retry reuses the recorded
+proposal-bound approval and never weakens the approval check.
+
+**Reset mission** replaces the in-memory Goal State with the canonical initial fixture and
+clears the handoff, transport labels, readiness flags, failure history, approval, and
+ephemeral proposal handles. Re-rendering removes and recreates the independent provider
+iframes, giving each provider page a fresh runtime context without restarting its server.
+No snapshot query parameter participates in the live flow.
+
 ## Registry contract
 
 NEXUS registry is intentionally thin:

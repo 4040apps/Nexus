@@ -137,6 +137,33 @@ describe('NEXUS Mission Dashboard', () => {
     expect(completeHtml).toContain('<strong>MXN 90,000</strong>');
   });
 
+  it('exposes reset only in the live demo and explicitly starts in Brand Mode', () => {
+    const snapshotHtml = renderMissionDashboard(states.initial);
+    const liveHtml = renderMissionDashboard(
+      states.initial,
+      {
+        providerOrigin: 'http://localhost:4500',
+        phase: 'READY',
+        message: 'Ready.',
+      },
+      undefined,
+      undefined,
+      undefined,
+      true,
+    );
+
+    expect(snapshotHtml).not.toContain('data-reset-mission');
+    expect(liveHtml).toContain('data-reset-mission');
+    expect(liveHtml).toContain('Reset mission');
+    expect(liveHtml).toContain('Brand Mode');
+    expect(liveHtml).toContain('<strong>0%</strong>');
+    expect(liveHtml.indexOf('class="dashboard-section goal-graph"')).toBeLessThan(
+      liveHtml.indexOf('data-handoff-status'),
+    );
+    expect(states.initial.requirements.every(({ status }) => status === 'PENDING')).toBe(true);
+    expect(states.initial.activity).toEqual([]);
+  });
+
   it('renders discovery, WebMCP, handoff, failure, reroute, approval, and completion events', () => {
     const html = renderAgentActivityTimeline(states.complete);
 

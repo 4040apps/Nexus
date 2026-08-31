@@ -41,6 +41,7 @@ docs/
   webmcp.md
   hackathon.md
   agent-readiness.md
+  demo.md
 AGENTS.md
 README.md
 ```
@@ -92,12 +93,16 @@ The dashboard renders canonical Goal State directly; the preview snapshots do no
 provider orchestration or commitment actions.
 
 Run the complete live OfficePro → handoff → TechSupply → FiberMX → NetBusiness → SecureNow
-hero on six
-independent local origins:
+hero on six independent local origins with one canonical command:
 
 ```bash
-pnpm demo:officepro
+pnpm demo:hero
 ```
+
+The command builds the required workspace, starts all six origins, checks that each one
+responds, and prints the ready URL. A failed or occupied server exits visibly instead of
+presenting a partial demo. The short recording walkthrough is in
+[`docs/demo.md`](docs/demo.md).
 
 Open `http://localhost:4400` and choose **Ask OfficePro**. NEXUS embeds the independent
 OfficePro site from `http://localhost:4500` with `allow="tools"`. In Chrome 151+ launched
@@ -124,6 +129,8 @@ progress and unchanged used budget. Only **Approve and continue** records a prop
 human approval and invokes the commitment-class `request_installation` tool. Success
 finishes the mission at 100%, MXN 410,000 used, and MXN 90,000 remaining while the
 FiberMX failure, NetBusiness recovery, and SecureNow approval remain visible.
+Choose **Reset mission** to clear canonical and provider runtime state and replay the full
+flow without restarting the servers. `pnpm demo:officepro` remains a compatibility alias.
 
 Run the Issue #6 cross-origin reproduction harness with `pnpm spike:webmcp`. It starts the
 authorized consumer on port 4100, the independent provider on port 4200, and an unauthorized

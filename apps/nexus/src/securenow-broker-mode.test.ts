@@ -264,8 +264,9 @@ describe('SecureNow human approval hero segment', () => {
     expect(html).toContain('MISSION COMPLETE · 100%');
     expect(html).toContain('MXN 410,000 / MXN 500,000');
     expect(html).toContain('MXN 90,000');
-    expect(html).toContain('Recovered from FiberMX deadline failure');
-    expect(html).toContain('Explicit human approval recorded');
+    expect(html).toContain('✕ FiberMX — Deadline failure');
+    expect(html).toContain('✓ NetBusiness — Recovery');
+    expect(html).toContain('✓ SecureNow — Human approval recorded');
     expect(timeline).toContain('<strong>Human</strong>');
     expect(timeline).toContain('Human approved SecureNow installation');
     expect(timeline).toContain('<code>request_installation</code>');

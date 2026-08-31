@@ -198,8 +198,9 @@ describe('FiberMX deadline failure and NetBusiness reroute', () => {
       fiberMxTransport: 'WEBMCP',
     });
     expect(blockedHtml).toContain('Visible provider failure · DELIVERY_DEADLINE');
-    expect(blockedHtml).toContain('Oct 8 installation');
-    expect(blockedHtml).toContain('misses Oct 1 deadline');
+    expect(blockedHtml).toContain('FiberMX · BLOCKED');
+    expect(blockedHtml).toContain('<dt>Available</dt><dd>Oct 8</dd>');
+    expect(blockedHtml).toContain('<dt>Required</dt><dd>Oct 1</dd>');
     expect(blockedHtml).toContain('Recover with another provider');
     expect(blockedHtml).toContain('60%');
     expect(blockedHtml).toContain('MXN 345,000');
@@ -219,6 +220,8 @@ describe('FiberMX deadline failure and NetBusiness reroute', () => {
     expect(html).toContain('Internet recovered through NetBusiness');
     expect(html).toContain('FiberMX · Oct 8');
     expect(html).toContain('NetBusiness · Sep 25');
+    expect(html).toContain('NEXUS REROUTE');
+    expect(html).toContain('✓ Recovered');
     expect(html).toContain('MXN 27,500');
     expect(html).toContain('80%');
     expect(html).toContain('MXN 372,500');
