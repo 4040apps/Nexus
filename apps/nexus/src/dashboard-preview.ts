@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { LOCAL_ORIGINS } from '@nexus/environment';
 
 import {
   HERO_DASHBOARD_STATE_NAMES,
@@ -12,7 +13,7 @@ import {
 } from './readiness.js';
 
 const port = Number(process.env.NEXUS_DASHBOARD_PORT ?? 4400);
-const origin = `http://localhost:${port}`;
+const origin = port === 4400 ? LOCAL_ORIGINS.nexus : `http://localhost:${port}`;
 const states = createHeroDashboardStates();
 
 const server = createServer(async (request, response) => {
@@ -34,7 +35,7 @@ const server = createServer(async (request, response) => {
     canonicalOrigin: origin,
     goalState: states[stateName],
     ...(requestedState === null
-      ? { officeProRuntime: { providerOrigin: 'http://localhost:4500' } }
+      ? { officeProRuntime: { providerOrigin: LOCAL_ORIGINS.officepro } }
       : {}),
   });
   const readinessResponse = getNexusReadinessResponse(url.pathname, surfaces);

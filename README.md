@@ -32,6 +32,7 @@ apps/
   netbusiness/
   securenow/
 packages/
+  environment/
   webmcp/
   goal-state/
   intent-handoff/
@@ -42,6 +43,7 @@ docs/
   hackathon.md
   agent-readiness.md
   demo.md
+  deployment.md
 AGENTS.md
 README.md
 ```
@@ -150,6 +152,26 @@ The external scan and Lighthouse scores remain pending until a public NEXUS depl
 actually measured. The evidence policy, accessibility checklist, deferred surfaces, and
 deploy/scan/fix/rescan workflow are in
 [`docs/agent-readiness.md`](docs/agent-readiness.md#targets-and-evidence-status).
+
+## Cloudflare production deployment
+
+The existing six-origin architecture has a separate, explicit Cloudflare Workers Static
+Assets deployment path. Normal `pnpm build` and `pnpm demo:hero` remain local and never
+publish. Production commands are:
+
+```bash
+pnpm build:production
+pnpm exec wrangler login
+pnpm deploy:production
+pnpm verify:production
+```
+
+The production build fails closed unless all six configured origins are exact HTTPS
+origins, every provider exposes tools only to `https://nexus.1expert.pro`, NEXUS discovery
+uses the five independent provider origins, and generated assets contain no localhost or
+HTTP origin. Account authentication and custom-domain attachment are deliberately manual.
+See [`docs/deployment.md`](docs/deployment.md) for the audited worker/domain mapping and
+the exact post-merge steps.
 
 ## Sprint 0
 

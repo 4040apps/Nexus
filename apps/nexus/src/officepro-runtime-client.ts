@@ -1,5 +1,6 @@
 import { canBeginBrokerRouting } from '@nexus/intent-handoff';
 import type { IntentHandoffLifecycle } from '@nexus/intent-handoff';
+import { getBuildOriginConfiguration } from '@nexus/environment/build';
 
 import {
   renderAgentActivityTimeline,
@@ -20,10 +21,8 @@ import {
   proposeOfficeProIntentHandoff,
 } from './officepro-intent-handoff.js';
 import {
-  FIBERMX_PROVIDER_ORIGIN,
   INTERNET_BROKER_TOOL_NAMES,
   InternetBrokerModeError,
-  NETBUSINESS_PROVIDER_ORIGIN,
   runFiberMxInternetRoute,
   runNetBusinessInternetRecovery,
 } from './internet-broker-mode.js';
@@ -32,7 +31,6 @@ import type { SecurityRuntimeView } from './dashboard.js';
 import {
   SECURENOW_COMMIT_TOOL_NAME,
   SECURENOW_PLANNING_TOOL_NAMES,
-  SECURENOW_PROVIDER_ORIGIN,
   SecureNowBrokerModeError,
   declineSecureNowApproval,
   executeSecureNowInstallation,
@@ -42,13 +40,17 @@ import {
 import type { SecureNowProposal } from './securenow-broker-mode.js';
 import {
   TECHSUPPLY_BROKER_TOOL_NAMES,
-  TECHSUPPLY_PROVIDER_ORIGIN,
   TechSupplyBrokerModeError,
   runTechSupplyBrokerMode,
 } from './techsupply-broker-mode.js';
 import { ExclusiveActionRunner } from './exclusive-action.js';
 
-const PROVIDER_ORIGIN = 'http://localhost:4500';
+const { origins } = getBuildOriginConfiguration();
+const PROVIDER_ORIGIN = origins.officepro;
+const TECHSUPPLY_PROVIDER_ORIGIN = origins.techsupply;
+const FIBERMX_PROVIDER_ORIGIN = origins.fibermx;
+const NETBUSINESS_PROVIDER_ORIGIN = origins.netbusiness;
+const SECURENOW_PROVIDER_ORIGIN = origins.securenow;
 const INITIAL_PROVIDER_MESSAGE = 'Waiting for the independent OfficePro origin to report its WebMCP capability.';
 const main = document.querySelector<HTMLElement>('#main-content');
 let goalState = createInitialHeroGoalState();
@@ -656,7 +658,7 @@ function renderLiveGoalState(): void {
 }
 
 async function createInvoker() {
-  const frame = document.querySelector<HTMLIFrameElement>('iframe[src="http://localhost:4500"]');
+  const frame = document.querySelector<HTMLIFrameElement>(`iframe[src="${PROVIDER_ORIGIN}"]`);
   const result = await createCrossOriginProviderInvoker({
     providerOrigin: PROVIDER_ORIGIN,
     toolNames: OFFICEPRO_BRAND_TOOL_NAMES,

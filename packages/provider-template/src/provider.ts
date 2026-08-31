@@ -67,6 +67,16 @@ export function getProviderDiscoveryMetadata(
   };
 }
 
+export function configureProviderOrigin(
+  provider: AgentReadyProvider,
+  origin: string,
+): AgentReadyProvider {
+  return defineAgentReadyProvider(
+    { ...provider.metadata, origin },
+    provider.tools,
+  );
+}
+
 function validateAgentReadyMetadata(metadata: AgentReadyProviderMetadata): void {
   assertText(metadata.id, 'id');
   assertText(metadata.name, 'name');

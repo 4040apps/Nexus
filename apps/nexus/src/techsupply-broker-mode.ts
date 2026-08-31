@@ -2,8 +2,9 @@ import { transitionRequirement } from '@nexus/goal-state';
 import type { GoalState, RequirementStatus } from '@nexus/goal-state';
 import { canBeginBrokerRouting } from '@nexus/intent-handoff';
 import type { IntentHandoff } from '@nexus/intent-handoff';
+import { getBuildOriginConfiguration } from '@nexus/environment/build';
 
-export const TECHSUPPLY_PROVIDER_ORIGIN = 'http://localhost:4600';
+export const TECHSUPPLY_PROVIDER_ORIGIN = getBuildOriginConfiguration().origins.techsupply;
 export const TECHSUPPLY_BROKER_TOOL_NAMES = [
   'search_computers',
   'check_inventory',

@@ -1,5 +1,15 @@
 # WebMCP Strategy
 
+## Production origin mapping
+
+The validated permission model is preserved in production. Every independent provider
+registers through `document.modelContext` with exact
+`exposedTo: ['https://nexus.1expert.pro']`; NEXUS discovery passes only that provider's
+exact HTTPS `1expert.pro` origin in `fromOrigins`, and its iframe retains `allow="tools"`.
+The ordinary build uses the corresponding localhost origins. The production build embeds
+only the fail-closed production map and never uses wildcard exposure or a provider proxy.
+Deployment details are in [deployment.md](deployment.md).
+
 ## Purpose
 
 WebMCP must be architectural, not decorative. Each demo provider is an independent agent-ready site with useful tools tied to real user goals.

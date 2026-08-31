@@ -12,6 +12,7 @@
     "build": "tsup"
   },
   "dependencies": {
+    "@nexus/environment": "workspace:*",
     "@nexus/provider-template": "workspace:*",
     "@nexus/webmcp": "workspace:*"
   }

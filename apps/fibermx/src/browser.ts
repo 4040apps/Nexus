@@ -1,4 +1,5 @@
-import { registerProviderTools } from '@nexus/provider-template';
+import { configureProviderOrigin, registerProviderTools } from '@nexus/provider-template';
+import { getBuildOriginConfiguration } from '@nexus/environment/build';
 import type { WebMcpDocument } from '@nexus/webmcp';
 
 import {
@@ -9,13 +10,14 @@ import {
 } from './broker-runtime.js';
 import type { FiberMxBrokerToolName } from './broker-runtime.js';
 
-const NEXUS_ORIGIN = 'http://localhost:4400';
+const { origins } = getBuildOriginConfiguration();
+const NEXUS_ORIGIN = origins.nexus;
 const status = document.querySelector<HTMLElement>('[data-registration-status]');
 const output = document.querySelector<HTMLElement>('[data-provider-output]');
 const button = document.querySelector<HTMLButtonElement>('[data-run-provider-flow]');
 const registration = await registerProviderTools(
   document as unknown as WebMcpDocument,
-  fiberMxBrokerProvider,
+  configureProviderOrigin(fiberMxBrokerProvider, origins.fibermx),
   { exposedTo: [NEXUS_ORIGIN] },
 );
 

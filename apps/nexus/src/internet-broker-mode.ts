@@ -2,11 +2,13 @@ import { rerouteRequirement, transitionRequirement } from '@nexus/goal-state';
 import type { GoalState, RequirementStatus } from '@nexus/goal-state';
 import { canBeginBrokerRouting } from '@nexus/intent-handoff';
 import type { IntentHandoff } from '@nexus/intent-handoff';
+import { getBuildOriginConfiguration } from '@nexus/environment/build';
 
 import type { ThinProviderMetadata } from './techsupply-broker-mode.js';
 
-export const FIBERMX_PROVIDER_ORIGIN = 'http://localhost:4700';
-export const NETBUSINESS_PROVIDER_ORIGIN = 'http://localhost:4800';
+const configuredOrigins = getBuildOriginConfiguration().origins;
+export const FIBERMX_PROVIDER_ORIGIN = configuredOrigins.fibermx;
+export const NETBUSINESS_PROVIDER_ORIGIN = configuredOrigins.netbusiness;
 export const INTERNET_BROKER_TOOL_NAMES = [
   'check_coverage',
   'check_installation_date',
