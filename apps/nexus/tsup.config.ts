@@ -5,6 +5,7 @@ export default defineConfig({
     'src/index.ts',
     'src/check-readiness.ts',
     'src/dashboard-preview.ts',
+    'src/hero-demo.ts',
     'src/officepro-runtime-client.ts',
   ],
   format: ['esm'],

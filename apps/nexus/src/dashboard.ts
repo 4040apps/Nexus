@@ -31,6 +31,7 @@ export type InternetRuntimeView = {
   message: string;
   fiberMxTransport?: 'WEBMCP' | 'WEBSITE_FALLBACK';
   netBusinessTransport?: 'WEBMCP' | 'WEBSITE_FALLBACK';
+  retryTarget?: 'FIBER' | 'NETBUSINESS';
 };
 
 export type SecurityRuntimeView = {
@@ -103,16 +104,27 @@ export function renderMissionDashboard(
   techSupplyRuntime?: TechSupplyRuntimeView,
   internetRuntime?: InternetRuntimeView,
   securityRuntime?: SecurityRuntimeView,
+  liveDemo = false,
 ): string {
   return `<article class="mission-dashboard" aria-labelledby="mission-title">
-  ${renderMissionSummary(goalState)}
+  ${renderMissionSummary(goalState, liveDemo && deriveMissionMode(goalState) === undefined ? 'Brand Mode' : undefined)}
+  ${liveDemo ? renderDemoControls() : ''}
+  ${liveDemo ? renderGoalGraph(goalState) : ''}
   ${officeProRuntime ? renderOfficeProRuntime(officeProRuntime, techSupplyRuntime !== undefined && techSupplyRuntime.phase !== 'READY') : ''}
   ${techSupplyRuntime ? renderTechSupplyRuntime(techSupplyRuntime) : ''}
   ${internetRuntime ? renderInternetRuntime(internetRuntime) : ''}
   ${securityRuntime ? renderSecurityRuntime(securityRuntime) : ''}
-  ${renderGoalGraph(goalState)}
+  ${liveDemo ? '' : renderGoalGraph(goalState)}
   ${renderAgentActivityTimeline(goalState)}
 </article>`;
+}
+
+export function renderDemoControls(): string {
+  return `<section class="demo-controls" aria-label="Demo controls">
+    <div><strong>Live deterministic mission</strong><span>Reset clears Goal State, approval, failure history, and provider runtime contexts.</span></div>
+    <button type="button" class="secondary-action" data-reset-mission>Reset mission</button>
+    <p class="sr-only" role="status" aria-live="polite" data-reset-status></p>
+  </section>`;
 }
 
 export function renderSecurityRuntime(runtime: SecurityRuntimeView): string {
@@ -157,7 +169,7 @@ export function renderSecurityRuntime(runtime: SecurityRuntimeView): string {
                   ${renderFact('Deadline', 'Oct 1 · met')}
                   ${renderFact('Security', 'SecureNow · human approved')}
                 </dl>
-                <ul class="completion-journey"><li>✓ Furniture — OfficePro</li><li>✓ Computers — TechSupply</li><li>✓ Internet — NetBusiness <small>Recovered from FiberMX deadline failure</small></li><li>✓ Security — SecureNow <small>Explicit human approval recorded</small></li></ul>
+                <ul class="completion-journey"><li>✓ OfficePro — Furniture</li><li>✓ TechSupply — Computers</li><li>✓ NetBusiness — Internet</li><li>✓ SecureNow — Security</li><li class="completion-journey__proof">✕ FiberMX — Deadline failure <span aria-hidden="true">→</span><span class="sr-only">then</span> ✓ NetBusiness — Recovery</li><li class="completion-journey__proof">✓ SecureNow — Human approval recorded</li></ul>
               </div>`
             : runtime.phase === 'ERROR' && runtime.approvalRecorded
               ? `<button class="primary-action" type="button" data-retry-security-commit>Retry approved installation</button>`
@@ -192,7 +204,11 @@ export function renderInternetRuntime(runtime: InternetRuntimeView): string {
         blocked
           ? `<div class="internet-blocker" role="alert">
               <p class="section-eyebrow">Visible provider failure · DELIVERY_DEADLINE</p>
-              <h3>Oct 8 installation <span aria-hidden="true">→</span> misses Oct 1 deadline</h3>
+              <h3>FiberMX · BLOCKED</h3>
+              <dl class="provider-result-summary" aria-label="FiberMX deadline conflict">
+                ${renderFact('Available', 'Oct 8')}
+                ${renderFact('Required', 'Oct 1')}
+              </dl>
               <p>FiberMX has valid Guadalajara coverage. Its offer remains uncommitted, progress stays at 60%, and the failure is preserved in Goal State.</p>
             </div>
             <button class="primary-action" type="button" data-recover-internet>Recover with another provider</button>`
@@ -203,8 +219,11 @@ export function renderInternetRuntime(runtime: InternetRuntimeView): string {
                 ${renderFact('Mission cost', 'MXN 27,500')}
                 ${renderFact('Remaining', 'Security')}
               </dl>
+              <ol class="recovery-path" aria-label="Internet failure and recovery path"><li><strong>FiberMX</strong><span>✕ Deadline failure</span></li><li><strong>NEXUS REROUTE</strong><span aria-hidden="true">↓</span></li><li><strong>NetBusiness</strong><span>✓ Recovered</span></li></ol>
               <p class="provider-result-complete"><strong>Internet requirement fulfilled.</strong> Mission progress is now 80%; the FiberMX failure remains auditable.</p>`
-            : `<button class="primary-action" type="button" data-route-internet${busy ? ' disabled aria-busy="true"' : ''}>${busy ? 'Internet provider is working…' : runtime.phase === 'ERROR' ? 'Retry internet route' : 'Find internet'}</button>`
+            : runtime.phase === 'ERROR' && runtime.retryTarget === 'NETBUSINESS'
+              ? `<button class="primary-action" type="button" data-recover-internet>Retry NetBusiness recovery</button>`
+              : `<button class="primary-action" type="button" data-route-internet${busy ? ' disabled aria-busy="true"' : ''}>${busy ? 'Internet provider is working…' : runtime.phase === 'ERROR' ? 'Retry FiberMX route' : 'Find internet'}</button>`
       }
     </div>
     <div class="internet-origins" aria-label="Independent internet provider origins">
@@ -243,10 +262,11 @@ export function renderOfficeProRuntime(
           : complete
           ? `<div class="continuation-panel">
               <p><strong>OfficePro completed what it could.</strong> 3 requirements remain: computers, internet, and security.</p>
+              <p>NEXUS can continue the user’s intent across other agent-ready websites. Explicit human authorization is required before Broker Mode.</p>
               <button type="button" data-continue-nexus>Continue through NEXUS</button>
               <small>This prepares a minimized Intent Handoff. It does not grant authorization.</small>
             </div>`
-          : `<button class="primary-action" type="button" data-ask-officepro${busy ? ' disabled aria-busy="true"' : ''}>${busy ? 'OfficePro is working…' : 'Ask OfficePro'}</button>`
+          : `<button class="primary-action" type="button" data-ask-officepro${busy ? ' disabled aria-busy="true"' : ''}>${busy ? 'OfficePro is working…' : runtime.phase === 'ERROR' ? 'Retry OfficePro' : 'Ask OfficePro'}</button>`
       }
     </div>
     <div class="provider-runtime__origin">
@@ -338,8 +358,8 @@ export function renderTechSupplyRuntime(runtime: TechSupplyRuntimeView): string 
   </section>`;
 }
 
-export function renderMissionSummary(goalState: GoalState): string {
-  const mode = deriveMissionMode(goalState);
+export function renderMissionSummary(goalState: GoalState, modeOverride?: MissionMode): string {
+  const mode = modeOverride ?? deriveMissionMode(goalState);
   const complete = goalState.progress === 100;
 
   return `<header class="mission-hero${complete ? ' mission-hero--complete' : ''}">
@@ -730,17 +750,24 @@ export const MISSION_DASHBOARD_STYLES = `
   .site-header nav ul { display: flex; flex-wrap: wrap; gap: 1.25rem; margin: 0; padding: 0; list-style: none; }
   .site-header nav a { color: var(--muted); font-size: .82rem; font-weight: 700; text-decoration: none; }
   .site-header nav a:hover { color: var(--text); }
-  main { padding-block: 2.25rem 4rem; }
+  main { padding-block: 1.5rem 4rem; }
   .site-footer { padding-block: 1.5rem 2.5rem; color: var(--muted); border-top: 1px solid rgba(142, 167, 200, .18); font-size: .85rem; }
 
-  .mission-dashboard { display: grid; gap: 2.25rem; }
+  .mission-dashboard { display: grid; gap: 1.5rem; }
+  .demo-controls { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: -1rem; padding: .85rem 1rem; border: 1px solid #334b67; border-radius: .9rem; background: rgba(9, 21, 36, .9); }
+  .demo-controls div { display: grid; gap: .2rem; }
+  .demo-controls strong { font-size: .82rem; }
+  .demo-controls span { color: var(--muted); font-size: .76rem; }
+  .demo-controls button { padding: .7rem .9rem; border: 1px solid #66809a; border-radius: .65rem; color: #e5edf5; background: #1a3044; font: inherit; font-weight: 850; cursor: pointer; white-space: nowrap; }
+  .demo-controls button:focus-visible { outline: 3px solid #d7f5ff; outline-offset: 3px; }
+  .demo-controls button:disabled { cursor: wait; opacity: .68; }
   .mission-hero {
     position: relative;
     overflow: hidden;
     display: grid;
     grid-template-columns: minmax(0, 1.35fr) minmax(20rem, .65fr);
     gap: clamp(2rem, 5vw, 5rem);
-    padding: clamp(2rem, 4vw, 4rem);
+    padding: clamp(1.6rem, 3vw, 2.8rem);
     border: 1px solid #2a4666;
     border-radius: 1.5rem;
     background:
@@ -839,6 +866,11 @@ export const MISSION_DASHBOARD_STYLES = `
   .mission-complete-panel { border: 1px solid #80a94a; background: rgba(32, 58, 23, .72); }
   .completion-journey { display: grid; gap: .55rem; margin: 1rem 0 0; padding: 0; list-style: none; font-weight: 800; }
   .completion-journey small { display: block; margin-left: 1.2rem; color: #bfd3ab; font-weight: 500; }
+  .completion-journey__proof { margin-top: .25rem; padding-top: .55rem; border-top: 1px solid rgba(128, 169, 74, .45); color: #d9edc5; }
+  .recovery-path { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .75rem; margin: 1rem 0; padding: .9rem; border: 1px solid #5a789c; border-radius: .8rem; background: rgba(9, 28, 47, .75); list-style: none; text-align: center; }
+  .recovery-path li { display: grid; gap: .25rem; }
+  .recovery-path li:nth-child(2) { color: #b9dbfa; font-size: .72rem; letter-spacing: .08em; }
+  .recovery-path span { color: var(--muted); font-size: .75rem; }
   .primary-action, .continuation-panel button, .handoff-actions button { padding: .85rem 1.1rem; border: 1px solid #c7fa6d; border-radius: .65rem; color: #0a1608; background: var(--accent); font: inherit; font-weight: 900; cursor: pointer; }
   .primary-action:focus-visible, .continuation-panel button:focus-visible, .handoff-actions button:focus-visible { outline: 3px solid #d7f5ff; outline-offset: 3px; }
   .primary-action:disabled { cursor: wait; opacity: .68; }
@@ -964,6 +996,8 @@ export const MISSION_DASHBOARD_STYLES = `
     .mission-progress { grid-template-columns: 1fr; }
     .mission-facts, .requirement-grid { grid-template-columns: 1fr; }
     .handoff-summary, .handoff-lifecycle, .provider-result-summary { grid-template-columns: 1fr; }
+    .demo-controls { align-items: stretch; flex-direction: column; }
+    .recovery-path { grid-template-columns: 1fr; }
     .requirement-card--blocked, .requirement-card--requires-human { grid-column: span 1; }
     .section-heading { align-items: flex-start; flex-direction: column; gap: .5rem; }
     .activity-event { grid-template-columns: 2.8rem .8rem minmax(0, 1fr); gap: .65rem; }

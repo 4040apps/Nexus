@@ -312,8 +312,12 @@ Issues #19–#23 apply the validated cross-origin model through failure, recover
 approval, and completion. Run:
 
 ```bash
-pnpm demo:officepro
+pnpm demo:hero
 ```
+
+The launcher reports the demo ready only after the NEXUS, OfficePro, TechSupply, FiberMX,
+NetBusiness, and SecureNow origins all respond. `pnpm demo:officepro` remains an alias for
+compatibility.
 
 Then open `http://localhost:4400` and select **Ask OfficePro**. The provider at
 `http://localhost:4500` registers four genuine tools through `document.modelContext` and

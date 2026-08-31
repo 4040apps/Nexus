@@ -118,6 +118,13 @@ visible focus. The approval action is distinct from the earlier Intent Handoff. 
 provider page exposes non-binding planning only; NEXUS’s website fallback preserves the
 same approval gate and never labels fallback transport as WebMCP.
 
+The live hero adds a keyboard-focusable **Reset mission** control with a polite reset
+announcement. All judge actions are disabled while an operation is busy, status changes
+remain text-labelled, and failure/recovery uses words and symbols rather than color alone.
+Reset returns focus to its control after restoring the canonical initial state.
+The live Goal Graph is placed directly below the compact mission summary and controls so
+progress and requirement state can share a typical recording viewport.
+
 This check is suitable for CI, but it does not replace an external scan or browser audit.
 
 ## Deploy, scan, fix, and rescan

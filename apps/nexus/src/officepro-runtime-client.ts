@@ -46,13 +46,15 @@ import {
   TechSupplyBrokerModeError,
   runTechSupplyBrokerMode,
 } from './techsupply-broker-mode.js';
+import { ExclusiveActionRunner } from './exclusive-action.js';
 
 const PROVIDER_ORIGIN = 'http://localhost:4500';
+const INITIAL_PROVIDER_MESSAGE = 'Waiting for the independent OfficePro origin to report its WebMCP capability.';
 const main = document.querySelector<HTMLElement>('#main-content');
 let goalState = createInitialHeroGoalState();
 let handoff: IntentHandoffLifecycle | undefined;
 let providerTransport: 'WEBMCP' | 'WEBSITE_FALLBACK' | undefined;
-let providerMessage = 'Waiting for the independent OfficePro origin to report its WebMCP capability.';
+let providerMessage = INITIAL_PROVIDER_MESSAGE;
 let techSupplyProviderReady = false;
 let fiberMxProviderReady = false;
 let netBusinessProviderReady = false;
@@ -68,6 +70,20 @@ let techSupplyView:
 let internetView: InternetRuntimeView | undefined;
 let securityView: SecurityRuntimeView | undefined;
 let secureNowProposal: SecureNowProposal | undefined;
+type DemoAction =
+  | 'OFFICEPRO'
+  | 'PROPOSE_HANDOFF'
+  | 'AUTHORIZE_HANDOFF'
+  | 'STAY_OFFICEPRO'
+  | 'TECHSUPPLY'
+  | 'FIBERMX'
+  | 'NETBUSINESS'
+  | 'SECURENOW_PLAN'
+  | 'SECURENOW_APPROVE'
+  | 'SECURENOW_DECLINE'
+  | 'SECURENOW_RETRY'
+  | 'RESET';
+const actionRunner = new ExclusiveActionRunner<DemoAction>(syncBusyControls);
 
 bindControls();
 window.addEventListener('message', (event: MessageEvent<unknown>) => {
@@ -87,38 +103,83 @@ window.addEventListener('message', (event: MessageEvent<unknown>) => {
 
 function bindControls(): void {
   document.querySelector<HTMLButtonElement>('[data-ask-officepro]')?.addEventListener('click', () => {
-    void runFlow();
+    void runExclusive('OFFICEPRO', runFlow);
   });
   document.querySelector<HTMLButtonElement>('[data-continue-nexus]')?.addEventListener('click', () => {
-    proposeHandoff();
+    void runExclusive('PROPOSE_HANDOFF', proposeHandoff);
   });
   document.querySelector<HTMLButtonElement>('[data-authorize-handoff]')?.addEventListener('click', () => {
-    void authorizeAndExecuteHandoff();
+    void runExclusive('AUTHORIZE_HANDOFF', authorizeAndExecuteHandoff);
   });
   document.querySelector<HTMLButtonElement>('[data-stay-officepro]')?.addEventListener('click', () => {
-    stayWithOfficePro();
+    void runExclusive('STAY_OFFICEPRO', stayWithOfficePro);
   });
   document.querySelector<HTMLButtonElement>('[data-route-computers]')?.addEventListener('click', () => {
-    void runTechSupplyFlow();
+    void runExclusive('TECHSUPPLY', runTechSupplyFlow);
   });
   document.querySelector<HTMLButtonElement>('[data-route-internet]')?.addEventListener('click', () => {
-    void runFiberMxFlow();
+    void runExclusive('FIBERMX', runFiberMxFlow);
   });
   document.querySelector<HTMLButtonElement>('[data-recover-internet]')?.addEventListener('click', () => {
-    void runNetBusinessRecovery();
+    void runExclusive('NETBUSINESS', runNetBusinessRecovery);
   });
   document.querySelector<HTMLButtonElement>('[data-route-security]')?.addEventListener('click', () => {
-    void runSecureNowPlan();
+    void runExclusive('SECURENOW_PLAN', runSecureNowPlan);
   });
   document.querySelector<HTMLButtonElement>('[data-approve-security]')?.addEventListener('click', () => {
-    void approveAndCommitSecurity();
+    void runExclusive('SECURENOW_APPROVE', approveAndCommitSecurity);
   });
   document.querySelector<HTMLButtonElement>('[data-decline-security]')?.addEventListener('click', () => {
-    declineSecurity();
+    void runExclusive('SECURENOW_DECLINE', declineSecurity);
   });
   document.querySelector<HTMLButtonElement>('[data-retry-security-commit]')?.addEventListener('click', () => {
-    void commitApprovedSecurity();
+    void runExclusive('SECURENOW_RETRY', commitApprovedSecurity);
   });
+  document.querySelector<HTMLButtonElement>('[data-reset-mission]')?.addEventListener('click', () => {
+    void runExclusive('RESET', resetMission);
+  });
+  syncBusyControls();
+}
+
+async function runExclusive(action: DemoAction, operation: () => void | Promise<void>): Promise<void> {
+  await actionRunner.run(action, operation);
+}
+
+function syncBusyControls(): void {
+  const selectors = [
+    '[data-ask-officepro]', '[data-continue-nexus]', '[data-authorize-handoff]',
+    '[data-stay-officepro]', '[data-route-computers]', '[data-route-internet]',
+    '[data-recover-internet]', '[data-route-security]', '[data-approve-security]',
+    '[data-decline-security]', '[data-retry-security-commit]', '[data-reset-mission]',
+  ].join(',');
+  for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>(selectors))) {
+    button.disabled = actionRunner.active !== undefined;
+    if (actionRunner.active !== undefined) button.setAttribute('aria-disabled', 'true');
+    else button.removeAttribute('aria-disabled');
+  }
+  const reset = document.querySelector<HTMLButtonElement>('[data-reset-mission]');
+  if (reset && actionRunner.active === 'RESET') reset.setAttribute('aria-busy', 'true');
+  else reset?.removeAttribute('aria-busy');
+}
+
+async function resetMission(): Promise<void> {
+  goalState = createInitialHeroGoalState();
+  handoff = undefined;
+  providerTransport = undefined;
+  providerMessage = INITIAL_PROVIDER_MESSAGE;
+  techSupplyProviderReady = false;
+  fiberMxProviderReady = false;
+  netBusinessProviderReady = false;
+  secureNowProviderReady = false;
+  techSupplyView = undefined;
+  internetView = undefined;
+  securityView = undefined;
+  secureNowProposal = undefined;
+  render({ phase: 'READY', message: providerMessage });
+  const status = document.querySelector<HTMLElement>('[data-reset-status]');
+  if (status) status.textContent = 'Mission reset. Brand Mode restored at 0% with all requirements pending.';
+  await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+  document.querySelector<HTMLButtonElement>('[data-reset-mission]')?.focus();
 }
 
 async function runFlow(): Promise<void> {
@@ -403,6 +464,7 @@ async function createSecureNowInvoker(toolNames: readonly string[]) {
 }
 
 function renderInternetError(error: unknown): void {
+  const previous = internetView;
   internetView = {
     fiberMxOrigin: FIBERMX_PROVIDER_ORIGIN,
     netBusinessOrigin: NETBUSINESS_PROVIDER_ORIGIN,
@@ -410,7 +472,9 @@ function renderInternetError(error: unknown): void {
     message: error instanceof InternetBrokerModeError || error instanceof Error
       ? error.message
       : 'Internet Broker Mode could not complete.',
-    ...(internetView?.fiberMxTransport ? { fiberMxTransport: internetView.fiberMxTransport } : {}),
+    retryTarget: previous?.phase === 'NETBUSINESS_RUNNING' ? 'NETBUSINESS' : 'FIBER',
+    ...(previous?.fiberMxTransport ? { fiberMxTransport: previous.fiberMxTransport } : {}),
+    ...(previous?.netBusinessTransport ? { netBusinessTransport: previous.netBusinessTransport } : {}),
   };
   renderCurrent();
 }
@@ -620,7 +684,7 @@ function setWorkingStatus(message: string): void {
 }
 
 function render(view: {
-  phase: 'COMPLETE' | 'ERROR';
+  phase: 'READY' | 'COMPLETE' | 'ERROR';
   message: string;
   transport?: 'WEBMCP' | 'WEBSITE_FALLBACK';
 }): void {
@@ -631,7 +695,7 @@ function render(view: {
     message: view.message,
     ...(view.transport ? { transport: view.transport } : {}),
     ...(handoff ? { handoff } : {}),
-  }, techSupplyView, internetView, securityView);
+  }, techSupplyView, internetView, securityView, true);
   bindControls();
 }
 

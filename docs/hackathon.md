@@ -88,6 +88,12 @@ MXN 410,000 used, and MXN 90,000 remaining. Its completion view and canonical ti
 retain the FiberMX deadline failure, NetBusiness recovery, and human approval rather than
 collapsing the story to a generic success state.
 
+The complete story now starts with `pnpm demo:hero`, which builds and health-checks all six
+origins before printing the judge URL. **Reset mission** clears Goal State and provider
+runtime contexts so the same servers can replay the exact narrative repeatedly. All
+judge-facing controls share a single in-flight guard, including the SecureNow commitment.
+See [demo.md](demo.md) for the concise recording sequence.
+
 ## Scope budget
 
 Prioritize roughly in this order:

@@ -201,6 +201,10 @@ function renderHtml(
             message: 'Waiting for the independent OfficePro origin to report its WebMCP capability.',
           }
         : undefined,
+      undefined,
+      undefined,
+      undefined,
+      officeProRuntime !== undefined,
     )}
   </main>
   <footer>
