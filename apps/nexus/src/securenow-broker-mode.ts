@@ -2,10 +2,11 @@ import { recordRequirementApproval, transitionRequirement } from '@nexus/goal-st
 import type { GoalState, RequirementApproval, RequirementStatus } from '@nexus/goal-state';
 import { canBeginBrokerRouting } from '@nexus/intent-handoff';
 import type { IntentHandoff } from '@nexus/intent-handoff';
+import { getBuildOriginConfiguration } from '@nexus/environment/build';
 
 import type { ThinProviderMetadata } from './techsupply-broker-mode.js';
 
-export const SECURENOW_PROVIDER_ORIGIN = 'http://localhost:4900';
+export const SECURENOW_PROVIDER_ORIGIN = getBuildOriginConfiguration().origins.securenow;
 export const SECURENOW_PLANNING_TOOL_NAMES = [
   'assess_security_requirement',
   'build_security_package',

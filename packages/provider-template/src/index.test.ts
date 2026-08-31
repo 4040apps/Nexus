@@ -6,6 +6,7 @@ import type {
 import { describe, expect, it } from 'vitest';
 
 import {
+  configureProviderOrigin,
   createExampleProvider,
   createProviderError,
   createProviderReadinessSurfaces,
@@ -45,6 +46,17 @@ describe('provider template contracts', () => {
     expect(JSON.stringify(discovery)).not.toContain('SKU-CHAIR');
     expect(JSON.stringify(discovery)).not.toContain('stock');
     expect(JSON.stringify(discovery)).not.toContain('price');
+  });
+
+  it('binds provider metadata to a deployment origin without changing owned tools', () => {
+    const provider = createAvailabilityProvider();
+    const configured = configureProviderOrigin(provider, 'https://provider.1expert.pro');
+
+    expect(configured.metadata.origin).toBe('https://provider.1expert.pro');
+    expect(configured.tools).toEqual(provider.tools);
+    expect(() => configureProviderOrigin(provider, 'http://provider.1expert.pro')).toThrow(
+      'must be a trustworthy HTTPS or localhost origin',
+    );
   });
 
   it('exercises the minimal provider-owned availability tool and normal validation', async () => {

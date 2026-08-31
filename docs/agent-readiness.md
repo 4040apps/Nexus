@@ -127,6 +127,12 @@ progress and requirement state can share a typical recording viewport.
 
 This check is suitable for CI, but it does not replace an external scan or browser audit.
 
+The production build now emits these maintained surfaces for
+`https://nexus.1expert.pro` and rejects localhost or insecure URL leakage before
+deployment. See [deployment.md](deployment.md) for the exact Cloudflare build, custom
+domain, and verification procedure. External scan and Lighthouse evidence remain
+`PENDING` until the public custom domain is actually attached and measured.
+
 ## Deploy, scan, fix, and rescan
 
 Run this loop on the real public NEXUS deployment, not a test fixture or local-only URL:

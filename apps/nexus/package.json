@@ -14,6 +14,7 @@
     "check:readiness": "node dist/check-readiness.js"
   },
   "dependencies": {
+    "@nexus/environment": "workspace:*",
     "@nexus/goal-state": "workspace:*",
     "@nexus/intent-handoff": "workspace:*",
     "@nexus/webmcp": "workspace:*"

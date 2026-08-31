@@ -12,6 +12,10 @@
     "spike:webmcp": "pnpm --filter @nexus/webmcp-cross-origin-spike build && pnpm --filter @nexus/webmcp-cross-origin-spike start",
     "demo:officepro": "pnpm demo:hero",
     "demo:hero": "pnpm build && node apps/nexus/dist/hero-demo.js",
+    "build:production": "NEXUS_ENVIRONMENT=PRODUCTION pnpm build && node apps/nexus/dist/build-production.js && node apps/nexus/dist/production-preflight.js",
+    "preflight:production": "node apps/nexus/dist/production-preflight.js",
+    "deploy:production": "node apps/nexus/dist/deploy-production.js",
+    "verify:production": "node apps/nexus/dist/verify-production.js",
     "lint": "eslint .",
     "typecheck": "pnpm --recursive typecheck",
     "test": "vitest run",
@@ -25,6 +29,7 @@
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "wrangler": "^4.127.1"
   }
 }

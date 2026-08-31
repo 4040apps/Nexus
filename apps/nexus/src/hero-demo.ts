@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { LOCAL_ORIGINS } from '@nexus/environment';
 
 export type HeroService = {
   label: string;
@@ -10,12 +11,12 @@ export type HeroService = {
 };
 
 export const HERO_SERVICES: readonly HeroService[] = [
-  { label: 'NEXUS', origin: 'http://localhost:4400', entry: 'apps/nexus/dist/dashboard-preview.js' },
-  { label: 'OfficePro', origin: 'http://localhost:4500', entry: 'apps/officepro/dist/server.js' },
-  { label: 'TechSupply', origin: 'http://localhost:4600', entry: 'apps/techsupply/dist/server.js' },
-  { label: 'FiberMX', origin: 'http://localhost:4700', entry: 'apps/fibermx/dist/server.js' },
-  { label: 'NetBusiness', origin: 'http://localhost:4800', entry: 'apps/netbusiness/dist/server.js' },
-  { label: 'SecureNow', origin: 'http://localhost:4900', entry: 'apps/securenow/dist/server.js' },
+  { label: 'NEXUS', origin: LOCAL_ORIGINS.nexus, entry: 'apps/nexus/dist/dashboard-preview.js' },
+  { label: 'OfficePro', origin: LOCAL_ORIGINS.officepro, entry: 'apps/officepro/dist/server.js' },
+  { label: 'TechSupply', origin: LOCAL_ORIGINS.techsupply, entry: 'apps/techsupply/dist/server.js' },
+  { label: 'FiberMX', origin: LOCAL_ORIGINS.fibermx, entry: 'apps/fibermx/dist/server.js' },
+  { label: 'NetBusiness', origin: LOCAL_ORIGINS.netbusiness, entry: 'apps/netbusiness/dist/server.js' },
+  { label: 'SecureNow', origin: LOCAL_ORIGINS.securenow, entry: 'apps/securenow/dist/server.js' },
 ];
 
 type FetchLike = (input: string) => Promise<{ ok: boolean }>;
@@ -52,7 +53,7 @@ export function formatHeroReadyOutput(services: readonly HeroService[]): string 
     ...services.map(({ label, origin }) => `✓ ${label.padEnd(width)} ${origin}`),
     '',
     'Hero demo ready:',
-    'http://localhost:4400',
+    LOCAL_ORIGINS.nexus,
   ].join('\n');
 }
 

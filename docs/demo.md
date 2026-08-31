@@ -42,3 +42,7 @@ restarting the six servers.
 
 Snapshot query parameters remain available only for development and presentation testing;
 the judged flow always starts at the query-free URL above.
+
+For the production six-origin build, Cloudflare deployment, exact custom domains, and
+post-deploy verification, see [deployment.md](deployment.md). The local walkthrough and
+deterministic hero values remain unchanged.

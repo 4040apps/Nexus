@@ -1,5 +1,14 @@
 # NEXUS Architecture
 
+## Deployment environments
+
+The shared `@nexus/environment` contract owns the complete `LOCAL` and `PRODUCTION`
+origin maps. Local development uses six HTTP localhost origins; production uses the six
+exact HTTPS subdomains under `1expert.pro`. Browser bundles receive one validated map at
+build time, so production assets cannot silently fall back to localhost. Cloudflare serves
+each app as a separate Workers Static Assets deployment; this changes hosting only, not
+the provider/NEXUS responsibility boundary. See [deployment.md](deployment.md).
+
 ## Thesis
 
 NEXUS is the continuity layer between independent agent-ready websites. The unit of continuity is the user's **Goal State**, not a browser page or a provider session.

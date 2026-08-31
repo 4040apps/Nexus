@@ -1,5 +1,9 @@
 # Hackathon Execution Plan
 
+The six-origin production hosting procedure is documented in
+[deployment.md](deployment.md). It preserves the Sprint 1 hero scenario and provider
+independence; it adds no product feature or alternate demo flow.
+
 ## Objective
 
 Build a Top-10-caliber WebMCP proof of concept by maximizing WebMCP leverage, execution quality, potential impact, and creativity without exceeding the scope needed for a reliable demo.
