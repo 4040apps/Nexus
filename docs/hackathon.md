@@ -54,7 +54,7 @@ The NEXUS mission dashboard should show:
 - approval state;
 - Agent Activity Timeline.
 
-## Implemented live segments through internet failure and recovery
+## Implemented complete live hero
 
 The live dashboard now begins where the user deliberately chose OfficePro. **Ask
 OfficePro** runs the four provider-owned furniture tools, visibly records their outcomes,
@@ -79,6 +79,14 @@ routing begins with **Find internet**. FiberMX confirms Guadalajara coverage but
 `FULFILLED`; the FiberMX failure remains visible in history and activity. The deterministic
 Issue #22 checkpoint is 80%, MXN 372,500 used, MXN 127,500 remaining, with security still
 `PENDING`. SecureNow and human approval begin only in Issue #23.
+
+**Find security** invokes SecureNow assessment and package planning, then visibly stops at
+`REQUIRES_HUMAN`. Progress remains 80% and the commitment tool has not run. **Not now**
+leaves the mission uncommitted. **Approve and continue** records a proposal-bound human
+approval before SecureNow executes `request_installation`. The dashboard then reaches 100%,
+MXN 410,000 used, and MXN 90,000 remaining. Its completion view and canonical timeline
+retain the FiberMX deadline failure, NetBusiness recovery, and human approval rather than
+collapsing the story to a generic success state.
 
 ## Scope budget
 

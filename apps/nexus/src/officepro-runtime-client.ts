@@ -28,6 +28,18 @@ import {
   runNetBusinessInternetRecovery,
 } from './internet-broker-mode.js';
 import type { InternetRuntimeView } from './dashboard.js';
+import type { SecurityRuntimeView } from './dashboard.js';
+import {
+  SECURENOW_COMMIT_TOOL_NAME,
+  SECURENOW_PLANNING_TOOL_NAMES,
+  SECURENOW_PROVIDER_ORIGIN,
+  SecureNowBrokerModeError,
+  declineSecureNowApproval,
+  executeSecureNowInstallation,
+  recordSecureNowApproval,
+  runSecureNowPlanning,
+} from './securenow-broker-mode.js';
+import type { SecureNowProposal } from './securenow-broker-mode.js';
 import {
   TECHSUPPLY_BROKER_TOOL_NAMES,
   TECHSUPPLY_PROVIDER_ORIGIN,
@@ -44,6 +56,7 @@ let providerMessage = 'Waiting for the independent OfficePro origin to report it
 let techSupplyProviderReady = false;
 let fiberMxProviderReady = false;
 let netBusinessProviderReady = false;
+let secureNowProviderReady = false;
 let techSupplyView:
   | {
       providerOrigin: string;
@@ -53,6 +66,8 @@ let techSupplyView:
     }
   | undefined;
 let internetView: InternetRuntimeView | undefined;
+let securityView: SecurityRuntimeView | undefined;
+let secureNowProposal: SecureNowProposal | undefined;
 
 bindControls();
 window.addEventListener('message', (event: MessageEvent<unknown>) => {
@@ -64,6 +79,9 @@ window.addEventListener('message', (event: MessageEvent<unknown>) => {
   }
   if (isInternetProviderReadyEvent(event, NETBUSINESS_PROVIDER_ORIGIN, 'NETBUSINESS_PROVIDER_READY')) {
     netBusinessProviderReady = true;
+  }
+  if (isInternetProviderReadyEvent(event, SECURENOW_PROVIDER_ORIGIN, 'SECURENOW_PROVIDER_READY')) {
+    secureNowProviderReady = true;
   }
 });
 
@@ -88,6 +106,18 @@ function bindControls(): void {
   });
   document.querySelector<HTMLButtonElement>('[data-recover-internet]')?.addEventListener('click', () => {
     void runNetBusinessRecovery();
+  });
+  document.querySelector<HTMLButtonElement>('[data-route-security]')?.addEventListener('click', () => {
+    void runSecureNowPlan();
+  });
+  document.querySelector<HTMLButtonElement>('[data-approve-security]')?.addEventListener('click', () => {
+    void approveAndCommitSecurity();
+  });
+  document.querySelector<HTMLButtonElement>('[data-decline-security]')?.addEventListener('click', () => {
+    declineSecurity();
+  });
+  document.querySelector<HTMLButtonElement>('[data-retry-security-commit]')?.addEventListener('click', () => {
+    void commitApprovedSecurity();
   });
 }
 
@@ -237,10 +267,139 @@ async function runNetBusinessRecovery(): Promise<void> {
       ...(fiberMxTransport ? { fiberMxTransport } : {}),
       netBusinessTransport: transport,
     };
+    securityView = {
+      providerOrigin: SECURENOW_PROVIDER_ORIGIN,
+      phase: 'READY',
+      message: 'Internet is complete. SecureNow has not been contacted yet.',
+    };
     renderCurrent();
   } catch (error) {
     renderInternetError(error);
   }
+}
+
+async function runSecureNowPlan(): Promise<void> {
+  if (!handoff || handoff.status !== 'EXECUTED' || !canBeginBrokerRouting(handoff)) return;
+  secureNowProviderReady = false;
+  securityView = {
+    providerOrigin: SECURENOW_PROVIDER_ORIGIN,
+    phase: 'PLANNING',
+    message: 'Invoking only SecureNow assessment and planning tools. No commitment is authorized.',
+  };
+  renderCurrent();
+  try {
+    await waitForSecureNowProvider();
+    const { invoker, transport } = await createSecureNowInvoker(SECURENOW_PLANNING_TOOL_NAMES);
+    const result = await runSecureNowPlanning(goalState, handoff, invoker);
+    goalState = result.goalState;
+    secureNowProposal = result.proposal;
+    securityView = {
+      providerOrigin: SECURENOW_PROVIDER_ORIGIN,
+      phase: 'REQUIRES_HUMAN',
+      transport,
+      message: 'SecureNow planning is complete. request_installation has not been invoked.',
+    };
+    renderCurrent();
+  } catch (error) {
+    renderSecurityError(error, false);
+  }
+}
+
+async function approveAndCommitSecurity(): Promise<void> {
+  if (!secureNowProposal) return;
+  try {
+    goalState = recordSecureNowApproval(goalState, secureNowProposal);
+    await commitApprovedSecurity();
+  } catch (error) {
+    renderSecurityError(error, goalState.requirements.find(({ id }) => id === 'security')?.approval?.approved === true);
+  }
+}
+
+async function commitApprovedSecurity(): Promise<void> {
+  if (!secureNowProposal) return;
+  const transport = securityView?.transport;
+  secureNowProviderReady = false;
+  securityView = {
+    providerOrigin: SECURENOW_PROVIDER_ORIGIN,
+    phase: 'COMMITTING',
+    message: 'Human approval is recorded. SecureNow may now execute request_installation.',
+    approvalRecorded: true,
+    ...(transport ? { transport } : {}),
+  };
+  renderCurrent();
+  try {
+    await waitForSecureNowProvider();
+    const commitInvoker = await createSecureNowInvoker([SECURENOW_COMMIT_TOOL_NAME]);
+    const result = await executeSecureNowInstallation(goalState, secureNowProposal, commitInvoker.invoker);
+    goalState = result.goalState;
+    securityView = {
+      providerOrigin: SECURENOW_PROVIDER_ORIGIN,
+      phase: 'COMPLETE',
+      message: 'SecureNow executed the human-approved installation request on its independent origin.',
+      approvalRecorded: true,
+      transport: commitInvoker.transport,
+    };
+    renderCurrent();
+  } catch (error) {
+    renderSecurityError(error, true);
+  }
+}
+
+function declineSecurity(): void {
+  if (!secureNowProposal) return;
+  declineSecureNowApproval(goalState, secureNowProposal);
+  const approvalPanel = document.querySelector<HTMLElement>('.commitment-approval');
+  if (approvalPanel) {
+    approvalPanel.setAttribute('role', 'status');
+    const notice = document.createElement('p');
+    notice.className = 'handoff-assurance';
+    notice.textContent = 'Not approved. SecureNow installation remains uncommitted; you may approve later.';
+    approvalPanel.append(notice);
+  }
+}
+
+function renderSecurityError(error: unknown, approvalRecorded: boolean): void {
+  securityView = {
+    providerOrigin: SECURENOW_PROVIDER_ORIGIN,
+    phase: 'ERROR',
+    message: error instanceof SecureNowBrokerModeError || error instanceof Error
+      ? error.message
+      : 'SecureNow could not complete safely.',
+    approvalRecorded,
+    ...(securityView?.transport ? { transport: securityView.transport } : {}),
+  };
+  renderCurrent();
+}
+
+function waitForSecureNowProvider(): Promise<void> {
+  if (secureNowProviderReady) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      window.removeEventListener('message', onReady);
+      reject(new Error('The independent SecureNow provider did not become ready.'));
+    }, 5_000);
+    const onReady = (event: MessageEvent<unknown>): void => {
+      if (!isInternetProviderReadyEvent(event, SECURENOW_PROVIDER_ORIGIN, 'SECURENOW_PROVIDER_READY')) return;
+      window.clearTimeout(timeout);
+      window.removeEventListener('message', onReady);
+      secureNowProviderReady = true;
+      resolve();
+    };
+    window.addEventListener('message', onReady);
+  });
+}
+
+async function createSecureNowInvoker(toolNames: readonly string[]) {
+  const frame = document.querySelector<HTMLIFrameElement>(`iframe[src="${SECURENOW_PROVIDER_ORIGIN}"]`);
+  return createCrossOriginProviderInvoker({
+    providerOrigin: SECURENOW_PROVIDER_ORIGIN,
+    toolNames,
+    frame,
+    requestType: 'NEXUS_SECURENOW_TOOL_REQUEST',
+    responseType: 'SECURENOW_TOOL_RESULT',
+    requestIdPrefix: 'securenow-request',
+    timeoutLabel: 'SecureNow',
+  });
 }
 
 function renderInternetError(error: unknown): void {
@@ -472,7 +631,7 @@ function render(view: {
     message: view.message,
     ...(view.transport ? { transport: view.transport } : {}),
     ...(handoff ? { handoff } : {}),
-  }, techSupplyView, internetView);
+  }, techSupplyView, internetView, securityView);
   bindControls();
 }
 

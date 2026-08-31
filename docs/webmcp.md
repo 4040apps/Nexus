@@ -306,10 +306,10 @@ Those remain behind injected provider services. The included development example
 a real `check_availability` WebMCP tool whose availability lookup is implemented by the
 example provider service.
 
-## OfficePro, Intent Handoff, TechSupply, and internet recovery reproduction
+## Complete hero reproduction through human approval
 
-Issues #19–#22 apply the validated cross-origin model through the visible internet failure
-and recovery. Run:
+Issues #19–#23 apply the validated cross-origin model through failure, recovery, human
+approval, and completion. Run:
 
 ```bash
 pnpm demo:officepro
@@ -366,6 +366,25 @@ Without WebMCP, both independent provider websites remain functional and NEXUS e
 labels the normal website message transport. This is a reproducible fallback, not a claim
 of cross-origin WebMCP success.
 
+Finally select **Find security**. SecureNow at `http://localhost:4900` registers
+`assess_security_requirement`, `build_security_package`, and `request_installation`, using
+`exposedTo: ['http://localhost:4400']`; NEXUS opts into that exact origin with
+`fromOrigins`. Only the READ/PLAN pair runs initially. The dashboard displays the MXN
+37,500, Sep 27 proposal and stops at `REQUIRES_HUMAN`; the COMMIT tool has not been called.
+
+Selecting **Not now** leaves the proposal uncommitted. Selecting **Approve and continue**
+records a human approval bound to the goal, security requirement, SecureNow, expected
+total, currency, `request_installation` action, and proposal scope. Only after that audit
+event does NEXUS discover/invoke the COMMIT tool. The provider template and SecureNow’s
+normal validation both reject missing or unrelated approval. Successful commitment reaches
+100%, MXN 410,000 used, and MXN 90,000 remaining.
+
+In an unsupported browser, SecureNow’s normal page can build the same non-binding plan but
+cannot request installation. The NEXUS fallback sends the commitment to the provider only
+after the same explicit approval and labels the transport as website fallback. It never
+claims WebMCP success. In Chrome 151+ launched with `--enable-features=WebMCP`, the enabled
+path uses genuine cross-origin discovery and execution on the SecureNow origin.
+
 ## Demo proof
 
-The final demo must make it obvious that provider capabilities are being exposed and invoked through WebMCP. The Agent Activity Timeline should show provider + tool + outcome, including the FiberMX deadline failure and the NetBusiness reroute.
+The final demo must make it obvious that provider capabilities are being exposed and invoked through WebMCP. The Agent Activity Timeline should show provider + tool + outcome, including the FiberMX deadline failure, NetBusiness reroute, human approval, and SecureNow commitment.

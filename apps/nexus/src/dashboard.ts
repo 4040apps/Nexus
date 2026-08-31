@@ -33,6 +33,14 @@ export type InternetRuntimeView = {
   netBusinessTransport?: 'WEBMCP' | 'WEBSITE_FALLBACK';
 };
 
+export type SecurityRuntimeView = {
+  providerOrigin: string;
+  phase: 'READY' | 'PLANNING' | 'REQUIRES_HUMAN' | 'COMMITTING' | 'COMPLETE' | 'ERROR';
+  message: string;
+  transport?: 'WEBMCP' | 'WEBSITE_FALLBACK';
+  approvalRecorded?: boolean;
+};
+
 type StatusPresentation = {
   label: string;
   symbol: string;
@@ -94,15 +102,70 @@ export function renderMissionDashboard(
   officeProRuntime?: OfficeProRuntimeView,
   techSupplyRuntime?: TechSupplyRuntimeView,
   internetRuntime?: InternetRuntimeView,
+  securityRuntime?: SecurityRuntimeView,
 ): string {
   return `<article class="mission-dashboard" aria-labelledby="mission-title">
   ${renderMissionSummary(goalState)}
   ${officeProRuntime ? renderOfficeProRuntime(officeProRuntime, techSupplyRuntime !== undefined && techSupplyRuntime.phase !== 'READY') : ''}
   ${techSupplyRuntime ? renderTechSupplyRuntime(techSupplyRuntime) : ''}
   ${internetRuntime ? renderInternetRuntime(internetRuntime) : ''}
+  ${securityRuntime ? renderSecurityRuntime(securityRuntime) : ''}
   ${renderGoalGraph(goalState)}
   ${renderAgentActivityTimeline(goalState)}
 </article>`;
+}
+
+export function renderSecurityRuntime(runtime: SecurityRuntimeView): string {
+  const awaitingApproval = runtime.phase === 'REQUIRES_HUMAN';
+  const complete = runtime.phase === 'COMPLETE';
+  const busy = runtime.phase === 'PLANNING' || runtime.phase === 'COMMITTING';
+  const transport = runtime.transport === 'WEBMCP'
+    ? 'Genuine cross-origin WebMCP'
+    : runtime.transport === 'WEBSITE_FALLBACK'
+      ? 'Normal provider website fallback'
+      : runtime.phase === 'ERROR'
+        ? 'SecureNow execution stopped safely'
+        : 'Broker provider ready';
+
+  return `<section class="dashboard-section provider-runtime provider-runtime--security${awaitingApproval ? ' provider-runtime--approval' : ''}${complete ? ' provider-runtime--complete' : ''}" aria-labelledby="security-runtime-heading" data-security-phase="${runtime.phase}">
+    <div class="provider-runtime__copy">
+      <p class="section-eyebrow">Broker Mode · security requirement</p>
+      <h2 id="security-runtime-heading">${complete ? 'Mission complete' : awaitingApproval ? 'Human approval required' : 'Complete office security'}</h2>
+      <p>SecureNow owns its assessment, package contents, availability, price, installation details, and commitment execution on an independent origin.</p>
+      <p class="provider-runtime__status" role="status" aria-live="assertive" data-security-status data-phase="${runtime.phase}"><strong>${escapeHtml(transport)}</strong><span>${escapeHtml(runtime.message)}</span></p>
+      ${
+        awaitingApproval
+          ? `<section class="commitment-approval" aria-labelledby="commitment-approval-heading">
+              <p class="commitment-approval__signal">REQUIRES_HUMAN · HUMAN APPROVAL REQUIRED</p>
+              <h3 id="commitment-approval-heading">SecureNow · Office security package</h3>
+              <dl class="provider-result-summary" aria-label="Commitment requiring approval">
+                ${renderFact('Requirement', 'Office security')}
+                ${renderFact('Cost', 'MXN 37,500')}
+                ${renderFact('Installation', 'Sep 27 · before Oct 1')}
+                ${renderFact('Action', 'Schedule security installation')}
+              </dl>
+              <p><strong>Consequence:</strong> approving authorizes SecureNow to execute its commitment-class <code>request_installation</code> action for this proposal. The earlier Intent Handoff did not authorize this commitment.</p>
+              <div class="handoff-actions"><button type="button" data-approve-security>Approve and continue</button><button type="button" class="secondary-action" data-decline-security>Not now</button></div>
+            </section>`
+          : complete
+            ? `<div class="mission-complete-panel" role="status">
+                <p class="commitment-approval__signal">MISSION COMPLETE · 100%</p>
+                <h3>Every requirement fulfilled within budget and deadline</h3>
+                <dl class="provider-result-summary" aria-label="Completed mission totals">
+                  ${renderFact('Budget used', 'MXN 410,000 / MXN 500,000')}
+                  ${renderFact('Remaining', 'MXN 90,000')}
+                  ${renderFact('Deadline', 'Oct 1 · met')}
+                  ${renderFact('Security', 'SecureNow · human approved')}
+                </dl>
+                <ul class="completion-journey"><li>✓ Furniture — OfficePro</li><li>✓ Computers — TechSupply</li><li>✓ Internet — NetBusiness <small>Recovered from FiberMX deadline failure</small></li><li>✓ Security — SecureNow <small>Explicit human approval recorded</small></li></ul>
+              </div>`
+            : runtime.phase === 'ERROR' && runtime.approvalRecorded
+              ? `<button class="primary-action" type="button" data-retry-security-commit>Retry approved installation</button>`
+              : `<button class="primary-action" type="button" data-route-security${busy ? ' disabled aria-busy="true"' : ''}>${busy ? 'SecureNow is working…' : runtime.phase === 'ERROR' ? 'Retry security plan' : 'Find security'}</button>`
+      }
+    </div>
+    <div class="provider-runtime__origin"><div><span>Independent provider origin</span><code>${escapeHtml(runtime.providerOrigin)}</code></div><iframe title="Independent SecureNow provider website" src="${escapeAttribute(runtime.providerOrigin)}" allow="tools"></iframe></div>
+  </section>`;
 }
 
 export function renderInternetRuntime(runtime: InternetRuntimeView): string {
@@ -410,6 +473,7 @@ export function renderAgentActivityTimeline(goalState: GoalState): string {
 
 function renderActivityEvent(event: ActivityEvent, goalState: GoalState): string {
   const isHandoff = 'handoffId' in event;
+  const isApproval = !isHandoff && event.action === 'REQUIREMENT_APPROVAL_RECORDED';
   const requirement =
     'requirementId' in event
       ? goalState.requirements.find((item) => item.id === event.requirementId)
@@ -417,14 +481,14 @@ function renderActivityEvent(event: ActivityEvent, goalState: GoalState): string
   const providerId = isHandoff
     ? event.sourceProviderId
     : event.providerId ?? readString(event.details, 'providerId');
-  const actor = isHandoff && event.action === 'HANDOFF_AUTHORIZED'
+  const actor = isApproval || (isHandoff && event.action === 'HANDOFF_AUTHORIZED')
     ? 'Human'
-    : event.action === 'REQUIREMENT_REROUTED' || isHandoff
+    : (!isHandoff && event.toStatus === 'REQUIRES_HUMAN') || event.action === 'REQUIREMENT_REROUTED' || isHandoff
       ? 'NEXUS'
     : providerId
       ? providerLabel(providerId)
       : 'NEXUS';
-  const outcome = isHandoff ? event.outcome : event.toStatus;
+  const outcome = isHandoff || isApproval ? event.outcome : event.toStatus;
   const statusClass = activityStatusClass(outcome);
   const toolName = readString(event.details, 'toolName');
   const summary = readString(event.details, 'summary') ?? activitySummary(event, requirement);
@@ -486,6 +550,10 @@ function activitySummary(event: ActivityEvent, requirement: Requirement | undefi
     return handoffCopy[event.action];
   }
 
+  if (event.action === 'REQUIREMENT_APPROVAL_RECORDED') {
+    return 'Human approval recorded for the bound provider commitment.';
+  }
+
   const requirementName = requirement
     ? REQUIREMENT_LABELS[requirement.type] ?? titleCase(requirement.type)
     : titleCase(event.requirementId);
@@ -510,6 +578,7 @@ function activityActionLabel(event: ActivityEvent): string {
   if ('handoffId' in event) {
     return titleCase(event.action.replaceAll('_', ' '));
   }
+  if (event.action === 'REQUIREMENT_APPROVAL_RECORDED') return 'Human approval recorded';
   return event.action === 'REQUIREMENT_REROUTED'
     ? 'Requirement rerouted'
     : 'Goal State updated';
@@ -519,6 +588,7 @@ function activityStatusClass(outcome: string): string {
   if (outcome === 'BLOCKED') return 'blocked';
   if (outcome === 'REQUIRES_HUMAN') return 'requires-human';
   if (outcome === 'FULFILLED' || outcome === 'EXECUTED') return 'fulfilled';
+  if (outcome === 'APPROVED') return 'fulfilled';
   return 'active';
 }
 
@@ -741,6 +811,9 @@ export const MISSION_DASHBOARD_STYLES = `
   .provider-runtime--techsupply { border-color: #3e759f; background: linear-gradient(130deg, rgba(17, 45, 68, .96), rgba(13, 25, 41, .92)); }
   .provider-runtime--internet { border-color: #526d91; background: linear-gradient(130deg, rgba(28, 43, 66, .96), rgba(13, 25, 41, .92)); }
   .provider-runtime--blocked { border-color: #b55865; box-shadow: inset .3rem 0 0 #ff6c78; background: linear-gradient(130deg, rgba(70, 23, 31, .94), rgba(13, 25, 41, .96)); }
+  .provider-runtime--security { border-color: #6857a2; background: linear-gradient(130deg, rgba(46, 35, 82, .96), rgba(13, 25, 41, .94)); }
+  .provider-runtime--approval { border: 2px solid #ffd166; box-shadow: 0 0 0 .35rem rgba(255, 209, 102, .1); }
+  .provider-runtime--complete { border-color: #7eaa3f; box-shadow: inset .3rem 0 0 var(--accent); }
   .provider-runtime h2 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.15rem); letter-spacing: -.035em; }
   .provider-runtime__copy > p:not(.section-eyebrow):not(.provider-runtime__status) { color: #c4d2ca; line-height: 1.55; }
   .provider-runtime__status { display: grid; gap: .22rem; margin: 1.25rem 0; padding: .9rem 1rem; border: 1px solid #4f6a5c; border-radius: .8rem; background: rgba(7, 20, 21, .58); }
@@ -757,6 +830,15 @@ export const MISSION_DASHBOARD_STYLES = `
   .internet-blocker { margin: 1.25rem 0; padding: 1rem 1.1rem; border: 1px solid #d86873; border-radius: .9rem; background: rgba(65, 13, 22, .82); }
   .internet-blocker h3 { margin: 0; color: #ffd8dc; font-size: 1.22rem; }
   .internet-blocker p:last-child { margin-bottom: 0; color: #edc4c8; line-height: 1.5; }
+  .commitment-approval, .mission-complete-panel { margin-top: 1.25rem; padding: 1.2rem; border-radius: 1rem; }
+  .commitment-approval { border: 2px solid #ffd166; color: #fff5d9; background: rgba(66, 48, 13, .78); }
+  .commitment-approval__signal { margin: 0 0 .55rem; color: #ffe49b; font-size: .74rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+  .commitment-approval h3, .mission-complete-panel h3 { margin: 0 0 1rem; font-size: 1.3rem; }
+  .commitment-approval > p:last-of-type { line-height: 1.55; }
+  .commitment-approval code { color: #fff1b8; }
+  .mission-complete-panel { border: 1px solid #80a94a; background: rgba(32, 58, 23, .72); }
+  .completion-journey { display: grid; gap: .55rem; margin: 1rem 0 0; padding: 0; list-style: none; font-weight: 800; }
+  .completion-journey small { display: block; margin-left: 1.2rem; color: #bfd3ab; font-weight: 500; }
   .primary-action, .continuation-panel button, .handoff-actions button { padding: .85rem 1.1rem; border: 1px solid #c7fa6d; border-radius: .65rem; color: #0a1608; background: var(--accent); font: inherit; font-weight: 900; cursor: pointer; }
   .primary-action:focus-visible, .continuation-panel button:focus-visible, .handoff-actions button:focus-visible { outline: 3px solid #d7f5ff; outline-offset: 3px; }
   .primary-action:disabled { cursor: wait; opacity: .68; }

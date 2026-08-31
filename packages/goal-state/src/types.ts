@@ -37,6 +37,15 @@ export type RequirementBlocker = {
 export type RequirementApproval = {
   required: boolean;
   approved: boolean;
+  approvalId?: string;
+  approvedAt?: string;
+  goalId?: string;
+  requirementId?: string;
+  providerId?: string;
+  expectedTotal?: number;
+  currency?: Currency;
+  action?: string;
+  approvalScopeId?: string;
 };
 
 export type RequirementFailure = {
@@ -60,7 +69,8 @@ export type Requirement = {
 
 export type RequirementActivityAction =
   | 'REQUIREMENT_STATUS_CHANGED'
-  | 'REQUIREMENT_REROUTED';
+  | 'REQUIREMENT_REROUTED'
+  | 'REQUIREMENT_APPROVAL_RECORDED';
 
 export type HandoffActivityAction =
   | 'HANDOFF_PROPOSED'
@@ -74,11 +84,23 @@ export type RequirementActivityEvent = {
   occurredAt: string;
   requirementId: string;
   providerId?: string;
-  action: RequirementActivityAction;
+  action: Exclude<RequirementActivityAction, 'REQUIREMENT_APPROVAL_RECORDED'>;
   fromStatus: RequirementStatus;
   toStatus: RequirementStatus;
   outcome: RequirementStatus;
   details?: Readonly<Record<string, unknown>>;
+};
+
+export type RequirementApprovalActivityEvent = {
+  id: string;
+  occurredAt: string;
+  requirementId: string;
+  providerId: string;
+  action: 'REQUIREMENT_APPROVAL_RECORDED';
+  fromStatus: 'REQUIRES_HUMAN';
+  toStatus: 'REQUIRES_HUMAN';
+  outcome: 'APPROVED';
+  details: Readonly<Record<string, unknown>>;
 };
 
 export type HandoffActivityEvent = {
@@ -91,7 +113,10 @@ export type HandoffActivityEvent = {
   details?: Readonly<Record<string, unknown>>;
 };
 
-export type ActivityEvent = RequirementActivityEvent | HandoffActivityEvent;
+export type ActivityEvent =
+  | RequirementActivityEvent
+  | RequirementApprovalActivityEvent
+  | HandoffActivityEvent;
 
 export type GoalState = {
   id: string;
@@ -124,6 +149,26 @@ export type RequirementTransitionInput = {
 export type RerouteRequirementInput = {
   requirementId: string;
   providerId: string;
+  eventId: string;
+  occurredAt: string;
+  details?: Readonly<Record<string, unknown>>;
+};
+
+export type RecordRequirementApprovalInput = {
+  requirementId: string;
+  approval: RequirementApproval & {
+    required: true;
+    approved: true;
+    approvalId: string;
+    approvedAt: string;
+    goalId: string;
+    requirementId: string;
+    providerId: string;
+    expectedTotal: number;
+    currency: Currency;
+    action: string;
+    approvalScopeId: string;
+  };
   eventId: string;
   occurredAt: string;
   details?: Readonly<Record<string, unknown>>;

@@ -112,6 +112,12 @@ and visible transport labelling pattern. Its result states quantity, provider, c
 delivery, progress, and remaining work in text, while the canonical timeline exposes the
 discovery and three provider tool steps without relying on color.
 
+The SecureNow continuation adds a text-first `REQUIRES_HUMAN` panel with an explicit
+proposal consequence, semantic approval and refusal buttons, assertive status updates, and
+visible focus. The approval action is distinct from the earlier Intent Handoff. The normal
+provider page exposes non-binding planning only; NEXUS’s website fallback preserves the
+same approval gate and never labels fallback transport as WebMCP.
+
 This check is suitable for CI, but it does not replace an external scan or browser audit.
 
 ## Deploy, scan, fix, and rescan

@@ -6,6 +6,7 @@ import {
   GoalStateError,
   isRequirementStatus,
   REQUIREMENT_STATUSES,
+  recordRequirementApproval,
   rerouteRequirement,
   transitionRequirement,
 } from './index.js';
@@ -140,6 +141,70 @@ describe('Goal State state machine', () => {
     });
 
     expect(requirement(state, 'security').approval).toEqual({ required: true, approved: true });
+  });
+
+  it('records a proposal-bound human approval without fulfilling the requirement', () => {
+    let state = createTestGoal([{
+      id: 'security',
+      type: 'security',
+      status: 'PROPOSED',
+      providerId: 'securenow',
+      estimatedCost: 37_500,
+    }]);
+    state = move(state, 'security', 'REQUIRES_HUMAN', {
+      approval: { required: true, approved: false },
+    });
+    const approved = recordRequirementApproval(state, {
+      requirementId: 'security',
+      approval: {
+        required: true,
+        approved: true,
+        approvalId: 'approval-security-1',
+        approvedAt: nextOccurredAt(state),
+        goalId: state.id,
+        requirementId: 'security',
+        providerId: 'securenow',
+        expectedTotal: 37_500,
+        currency: 'MXN',
+        action: 'request_installation',
+        approvalScopeId: 'security-proposal-1',
+      },
+      eventId: nextEventId(state),
+      occurredAt: nextOccurredAt(state),
+    });
+
+    expect(requirement(approved, 'security')).toMatchObject({
+      status: 'REQUIRES_HUMAN',
+      approval: { approved: true, goalId: state.id, expectedTotal: 37_500 },
+    });
+    expect(approved).toMatchObject({ progress: 0, budgetUsed: 0 });
+    expect(approved.activity.at(-1)).toMatchObject({
+      action: 'REQUIREMENT_APPROVAL_RECORDED',
+      outcome: 'APPROVED',
+      providerId: 'securenow',
+    });
+
+    expectGoalStateError(
+      () => recordRequirementApproval(state, {
+        requirementId: 'security',
+        approval: {
+          required: true,
+          approved: true,
+          approvalId: 'stale',
+          approvedAt: nextOccurredAt(state),
+          goalId: 'another-goal',
+          requirementId: 'security',
+          providerId: 'securenow',
+          expectedTotal: 37_500,
+          currency: 'MXN',
+          action: 'request_installation',
+          approvalScopeId: 'security-proposal-1',
+        },
+        eventId: 'stale-event',
+        occurredAt: nextOccurredAt(state),
+      }),
+      'APPROVAL_REQUIRED',
+    );
   });
 
   it('rejects invalid transitions and malformed transition data', () => {

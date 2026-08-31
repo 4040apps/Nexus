@@ -24,6 +24,13 @@ export type HumanApproval = {
   approved: true;
   approvalId: string;
   approvedAt: string;
+  goalId?: string;
+  requirementId?: string;
+  providerId?: string;
+  expectedTotal?: number;
+  currency?: 'MXN';
+  action?: string;
+  approvalScopeId?: string;
 };
 
 export type ProviderTool<TOutput = unknown> = WebMcpToolDefinition<
