@@ -23,6 +23,7 @@ export async function assertProductionAssets(repositoryRoot: string): Promise<vo
           'developers/index.html',
           'developers.md',
           'developers/llms.txt',
+          'favicon.svg',
           'index.html',
           'index.md',
           'llms.txt',

@@ -31,6 +31,7 @@ export const NEXUS_READINESS_ROUTES = [
   '/.well-known/ard.json',
   '/.well-known/agent-skills/index.json',
   HERO_SKILL_PATH,
+  '/favicon.svg',
   '/og-image.svg',
 ] as const;
 
@@ -117,6 +118,7 @@ export type NexusReadinessSurfaces = {
   ardJson: string;
   agentSkillsIndexJson: string;
   heroSkillMarkdown: string;
+  faviconSvg: string;
   ogImageSvg: string;
   notFoundHtml: string;
   structuredData: NexusStructuredData;
@@ -154,6 +156,7 @@ const CONTENT_TYPES: Readonly<Record<NexusReadinessRoute, string>> = {
   '/.well-known/ard.json': 'application/json; charset=utf-8',
   '/.well-known/agent-skills/index.json': 'application/json; charset=utf-8',
   [HERO_SKILL_PATH]: 'text/markdown; charset=utf-8',
+  '/favicon.svg': 'image/svg+xml; charset=utf-8',
   '/og-image.svg': 'image/svg+xml; charset=utf-8',
 };
 
@@ -215,7 +218,7 @@ function escapeXml(value: string): string {
 }
 
 function renderRobotsTxt(origin: string): string {
-  return `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\nAgentmap: ${origin}/.well-known/ard.json\n`;
+  return `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n# ARD: ${origin}/.well-known/ard.json\n`;
 }
 
 function renderSitemapXml(origin: string): string {
@@ -663,7 +666,7 @@ function navigation(): string {
   return `<nav aria-label="Primary navigation"><ul><li><a href="/">Mission</a></li><li><a href="/developers">Developers</a></li><li><a href="/sandbox">Sandbox</a></li><li><a href="/about">About</a></li><li><a href="/llms.txt">AI overview</a></li></ul></nav>`;
 }
 
-function renderHead(origin: string, path: string, title: string, description: string, structuredData: NexusStructuredData): string {
+function renderHead(origin: string, path: string, title: string, description: string, structuredData: NexusStructuredData, preconnectOrigin?: string): string {
   const canonicalUrl = `${origin}${path}`;
   const markdownPath = path === '/' ? '/index.md' : ['/developers', '/about', '/contact', '/privacy', '/sandbox'].includes(path) ? `${path}.md` : '/index.md';
   const structuredDataJson = JSON.stringify(structuredData).replaceAll('<', '\\u003c');
@@ -679,6 +682,8 @@ function renderHead(origin: string, path: string, title: string, description: st
   <meta property="og:image" content="${origin}/og-image.svg">
   <meta property="og:image:type" content="image/svg+xml">
   <meta property="og:image:alt" content="NEXUS — intent continuity across providers">
+  <link rel="icon" type="image/svg+xml" href="${origin}/favicon.svg">
+  ${preconnectOrigin ? `<link rel="preconnect" href="${preconnectOrigin}">` : ''}
   <link rel="canonical" href="${canonicalUrl}">
   <link rel="alternate" type="text/markdown" href="${origin}${markdownPath}" title="${title} in Markdown">
   <link rel="ard" type="application/json" href="${origin}/.well-known/ard.json">
@@ -696,7 +701,7 @@ function renderHtml(origin: string, structuredData: NexusStructuredData, goalSta
   const description = 'NEXUS continues remaining intent across independent WebMCP providers with visible recovery and human approval.';
   return `<!doctype html>
 <html lang="en">
-<head>${renderHead(origin, '/', 'NEXUS — Intent continuity across providers', description, structuredData)}</head>
+<head>${renderHead(origin, '/', 'NEXUS — Intent continuity across providers', description, structuredData, officeProRuntime?.providerOrigin)}</head>
 <body>
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header><div class="site-header"><div class="brand"><span class="brand-mark" aria-hidden="true">N</span><span>NEXUS</span></div>${navigation()}</div></header>
@@ -801,6 +806,15 @@ function renderOgImageSvg(): string {
 `;
 }
 
+function renderFaviconSvg(): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">NEXUS</title>
+  <rect width="64" height="64" rx="14" fill="#122137"/>
+  <path d="M18 46V18h7l14 18V18h7v28h-7L25 28v18z" fill="#b8f24b"/>
+</svg>
+`;
+}
+
 export function createNexusReadinessSurfaces(config: NexusReadinessConfig): NexusReadinessSurfaces {
   const canonicalOrigin = normalizeCanonicalOrigin(config.canonicalOrigin);
   const structuredData = createStructuredData(canonicalOrigin);
@@ -829,6 +843,7 @@ export function createNexusReadinessSurfaces(config: NexusReadinessConfig): Nexu
     ardJson: renderArdJson(canonicalOrigin),
     agentSkillsIndexJson: renderAgentSkillsIndex(canonicalOrigin, heroSkillMarkdown),
     heroSkillMarkdown,
+    faviconSvg: renderFaviconSvg(),
     ogImageSvg: renderOgImageSvg(),
     notFoundHtml: renderNotFoundHtml(canonicalOrigin, structuredData),
     structuredData,
@@ -860,6 +875,7 @@ function responseForRoute(route: NexusReadinessRoute, surfaces: NexusReadinessSu
     '/.well-known/ard.json': surfaces.ardJson,
     '/.well-known/agent-skills/index.json': surfaces.agentSkillsIndexJson,
     [HERO_SKILL_PATH]: surfaces.heroSkillMarkdown,
+    '/favicon.svg': surfaces.faviconSvg,
     '/og-image.svg': surfaces.ogImageSvg,
   };
   const headers: Record<string, string> = { 'content-type': CONTENT_TYPES[route], link: alternateLinkHeader(surfaces.canonicalOrigin), 'x-content-type-options': 'nosniff' };
@@ -897,7 +913,7 @@ export function validateNexusReadinessSurfaces(surfaces: NexusReadinessSurfaces)
     const response = getNexusReadinessResponse(route, surfaces);
     if (response.status !== 200 || response.body.trim().length === 0) errors.push(`${route} must resolve to a non-empty 200 response.`);
   }
-  if (!surfaces.robotsTxt.includes(`Sitemap: ${expectedOrigin}/sitemap.xml`) || !surfaces.robotsTxt.includes(`Agentmap: ${expectedOrigin}/.well-known/ard.json`)) errors.push('robots.txt must reference the canonical sitemap and ARD manifest.');
+  if (!surfaces.robotsTxt.includes(`Sitemap: ${expectedOrigin}/sitemap.xml`) || !surfaces.robotsTxt.includes(`# ARD: ${expectedOrigin}/.well-known/ard.json`)) errors.push('robots.txt must reference the canonical sitemap and document the separately advertised ARD manifest.');
   if (!surfaces.robotsTxt.startsWith('User-agent: *\nAllow: /\n')) errors.push('robots.txt must contain a valid public crawler policy.');
   if (!surfaces.sitemapXml.startsWith('<?xml version="1.0" encoding="UTF-8"?>') || !surfaces.sitemapXml.includes(`<loc>${escapeXml(`${expectedOrigin}/`)}</loc>`) || !surfaces.sitemapXml.includes(`<lastmod>${READINESS_LAST_MODIFIED}</lastmod>`)) errors.push('sitemap.xml must include canonical maintained pages with last-modified dates.');
 
@@ -951,6 +967,7 @@ export function validateNexusReadinessSurfaces(surfaces: NexusReadinessSurfaces)
 
   if (!surfaces.html.includes('<main id="main-content" tabindex="-1">') || !/<h1(?:\s|>)/.test(surfaces.html) || !surfaces.html.includes('Public hackathon sandbox.')) errors.push('The NEXUS shell must include its labelled main landmark, level-one heading, and sandbox disclosure.');
   if (!surfaces.html.includes('<link rel="alternate" type="text/markdown"') || !surfaces.html.includes('<meta property="og:image"') || !surfaces.html.includes('<meta property="og:type" content="website">')) errors.push('The NEXUS shell must advertise its canonical Markdown and Open Graph metadata.');
+  if (!surfaces.html.includes(`<link rel="icon" type="image/svg+xml" href="${expectedOrigin}/favicon.svg">`)) errors.push('The NEXUS shell must advertise its maintained favicon.');
   if (!surfaces.developersHtml.includes(`${expectedOrigin}/developers.md`) || !surfaces.developersHtml.includes('"@type":"FAQPage"')) {
     errors.push('The developer guide must advertise its Markdown twin and embed its visible FAQ data.');
   }

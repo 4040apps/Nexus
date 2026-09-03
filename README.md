@@ -153,8 +153,9 @@ The first Ora audit of `https://nexus.1expert.pro` established a real **39/100 (
 baseline. The recorded post-deployment follow-up measured **61/100 (C)**, with WebMCP
 still passing **5/5**. Issue #34's final polish adds only truthful maintained surfaces;
 it does not claim another external score, and no Ora force scan is part of this change.
-Lighthouse remains pending. The evidence policy, accessibility checklist, deliberately
-absent surfaces, and measurement history are in
+The pre-change Issue #38 production Lighthouse baseline is **93 Performance, 100
+Accessibility, 96 Best Practices, and 92 SEO**. The evidence policy, exact Lighthouse
+findings, accessibility checklist, deliberately absent surfaces, and measurement history are in
 [`docs/agent-readiness.md`](docs/agent-readiness.md#targets-and-measured-baseline).
 
 ## Cloudflare production deployment

@@ -37,8 +37,9 @@ describe('NEXUS agent-readiness surfaces', () => {
     expect(application?.url).toBe(`${TEST_ORIGIN}/`);
     expect(surfaces.robotsTxt).toContain(`Sitemap: ${TEST_ORIGIN}/sitemap.xml`);
     expect(surfaces.robotsTxt).toContain(
-      `Agentmap: ${TEST_ORIGIN}/.well-known/ard.json`,
+      `# ARD: ${TEST_ORIGIN}/.well-known/ard.json`,
     );
+    expect(surfaces.robotsTxt).not.toMatch(/^Agentmap:/m);
     expect(surfaces.sitemapXml).toContain(`<loc>${TEST_ORIGIN}/</loc>`);
   });
 
@@ -78,6 +79,10 @@ describe('NEXUS agent-readiness surfaces', () => {
     expect(getNexusReadinessResponse('/.well-known/mcp/server-card.json', surfaces).status).toBe(
       404,
     );
+    expect(getNexusReadinessResponse('/favicon.svg', surfaces)).toMatchObject({
+      status: 200,
+      headers: { 'content-type': 'image/svg+xml; charset=utf-8' },
+    });
   });
 
   it('publishes useful Markdown aligned with the real architecture and sandbox', () => {
@@ -253,6 +258,16 @@ describe('NEXUS agent-readiness surfaces', () => {
     expect(surfaces.sandboxHtml).toContain('production NEXUS site is itself the public sandbox');
     expect(surfaces.sandboxHtml).toContain('no separate API sandbox');
     expect(surfaces.sandboxHtml).toContain(`${TEST_ORIGIN}/sandbox.md`);
+    const productionShell = createNexusReadinessSurfaces({
+      canonicalOrigin: TEST_ORIGIN,
+      officeProRuntime: { providerOrigin: 'https://officepro.example.org' },
+    }).html;
+    expect(productionShell).toContain(
+      '<link rel="preconnect" href="https://officepro.example.org">',
+    );
+    expect(productionShell).toContain(
+      `<link rel="icon" type="image/svg+xml" href="${TEST_ORIGIN}/favicon.svg">`,
+    );
     expect(notFound.status).toBe(404);
     expect(notFound.headers['content-type']).toContain('text/html');
     expect(notFound.body).toContain('/sitemap.xml');

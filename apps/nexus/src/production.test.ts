@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import { PRODUCTION_ORIGINS } from '@nexus/environment';
 
+import { STATIC_ASSET_CACHE_CONTROL } from './build-production.js';
 import {
   PRODUCTION_READINESS_PATHS,
   PROVIDER_SITES,
@@ -32,6 +33,10 @@ describe('production deployment contract', () => {
       html_handling: 'drop-trailing-slash',
       not_found_handling: '404-page',
     });
+  });
+
+  it('uses revalidated static caching without disabling back/forward cache', () => {
+    expect(STATIC_ASSET_CACHE_CONTROL).toBe('public, max-age=0, must-revalidate');
   });
 
   it('uses exact exposedTo and fromOrigins boundaries without wildcards', () => {
