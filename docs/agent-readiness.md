@@ -22,7 +22,7 @@ polish; the repository does not infer a score from local checks.
 | Ora usability layer | Recorded follow-up scan | **33/60** |
 | Ora WebMCP check | Recorded follow-up scan | **PASS, 5/5** |
 | Local readiness contract | Repository tests and `check:readiness` | **PASS** |
-| Lighthouse accessibility | No versioned report has been recorded yet | **PENDING** |
+| Lighthouse production baseline | Lighthouse 13.4.1 / Headless Chrome 152, commit `dd2cc98`, 2026-09-03T05:44:59Z | **Performance 93, Accessibility 100, Best Practices 96, SEO 92** |
 
 The Ora comments were posted on 2026-09-03 UTC. They do not preserve an observable CLI
 version or complete scan artifacts in the repository, so this document does not invent
@@ -44,18 +44,19 @@ framework-independent NEXUS readiness handler now maintains these routes:
 | `/` | Accessible mission dashboard, public-sandbox disclosure, canonical and Open Graph metadata, linked JSON-LD, and discovery links |
 | `/developers` | WebMCP architecture, independent provider origins, permission/approval boundaries, local and production usage, and source links qualified as access-controlled |
 | `/about` | Product thesis, canonical hero mission, and explicit proof-of-concept limits |
-| `/contact` | Public GitHub issue path and a warning not to submit sensitive or real procurement data |
+| `/contact` | Access-controlled GitHub issue path and a warning not to submit sensitive or real procurement data |
 | `/privacy` | The demo's actual browser-state/data boundaries and hosting qualification |
 | `/sandbox` | Existing deterministic hero-demo scope, controls, synthetic-data boundary, and explicit statement that this is not an API sandbox |
 | `/index.md` | Canonical Markdown representation of the product, mission, safety rules, and maintained resources |
 | `/developers.md`, `/about.md`, `/contact.md`, `/privacy.md`, `/sandbox.md` | Frontmatter-bearing Markdown twins of the corresponding substantive HTML pages |
 | `/llms.txt` | Concrete “When to use NEXUS” guidance, WebMCP/runtime facts, and links to maintained docs and discovery files |
 | `/developers/llms.txt` | Scoped developer context covering the real WebMCP origins, runtime flag, approval boundary, and deliberately absent public API/auth surfaces |
-| `/robots.txt` | Public crawler policy plus canonical sitemap and ARD `Agentmap` references |
+| `/robots.txt` | Standards-valid public crawler policy, canonical sitemap, and an informational comment pointing to the separately advertised ARD manifest |
 | `/sitemap.xml` | Canonical maintained pages with explicit `lastmod` values |
 | `/.well-known/ard.json` | ARD entries for only the maintained Markdown documentation and real hero skill artifact |
 | `/.well-known/agent-skills/index.json` | Agent Skills Discovery v0.2.0 index for one actual hero-flow skill, including its byte-accurate SHA-256 digest |
 | `/.well-known/agent-skills/continue-procurement-mission/SKILL.md` | Installable instructions for the implemented deterministic hero flow and its approval boundaries |
+| `/favicon.svg` | Maintained NEXUS site icon referenced explicitly by every HTML page |
 | `/og-image.svg` | Maintained NEXUS social-preview image referenced by the page metadata |
 
 Unknown routes return an HTML `404` with an actual HTTP 404 status, a plain explanation,
@@ -165,12 +166,55 @@ scheduled after the PR's immutable commit is deployed to the same production dom
 5. If the score remains below 95, accept only fixes backed by real implemented behavior;
    document all intentionally absent surfaces instead of fabricating them.
 
-## Lighthouse and manual accessibility audit
+## Lighthouse baseline and evidence-backed fixes
 
-Run Lighthouse against the same deployed commit used for the rescan. Use a fresh Chrome
-profile, pin and record the Chrome and Lighthouse versions, retain the HTML and JSON
-reports, and record the final redirected URL and timestamp. Until that report exists, the
-repository result remains **PENDING**.
+Issue #38 captured the required production baseline before changing application code. The
+full JSON report is versioned as [`lighthouse-nexus.json`](../lighthouse-nexus.json).
+
+| Category | Production baseline |
+| --- | ---: |
+| Performance | **93** |
+| Accessibility | **100** |
+| Best Practices | **96** |
+| SEO | **92** |
+
+The run used Lighthouse 13.4.1 and Headless Chrome 152 against the final displayed URL
+`https://nexus.1expert.pro/` at 2026-09-03T05:44:59Z. It reported no run warnings and no
+audit warnings. The scored or actionable findings were:
+
+- missing `/favicon.ico`, producing the only browser-console error;
+- the non-standard `Agentmap:` line in `robots.txt`, which Lighthouse rejected as an
+  unknown directive;
+- FCP 2.2s, LCP 2.7s, Speed Index 3.4s, and TTI 2.7s;
+- an estimated 149ms LCP opportunity from preconnecting the immediately embedded
+  OfficePro origin;
+- `Cache-Control: no-store` preventing the static main document from entering the
+  back/forward cache.
+
+The report's 4 KiB cache-lifetime finding belongs to Cloudflare's injected analytics
+beacon, not a repository asset. The remaining no-store network finding also names an
+infrastructure-injected request. This implementation does not claim to control those
+third-party headers.
+
+Each source change maps directly to that evidence: the shell now declares and serves a
+real SVG favicon; `robots.txt` keeps standard directives only while ARD discovery remains
+available through HTML and HTTP `Link` metadata; the production shell preconnects the
+exact OfficePro origin supplied by the environment map; and deterministic static assets
+use `public, max-age=0, must-revalidate` instead of `no-store`. The revalidation policy
+avoids stale unfingerprinted assets while allowing browser history restoration.
+
+The user requested review before deployment, so this PR does not claim a post-change
+production score. After the reviewed commit is deployed, rerun the exact Lighthouse
+command and record the four final production scores. The >=95 production target remains
+pending until that measurement exists.
+
+A post-build smoke run against the generated NEXUS static assets scored 100 in all four
+categories and confirmed that the favicon console error, invalid robots directive,
+back/forward-cache failure, and OfficePro preconnect opportunity were absent. That local
+result validates the generated artifacts, but it is not presented as a production score
+because it cannot reproduce Cloudflare latency, headers, or injected analytics.
+
+## Manual accessibility audit
 
 Manual verification must also cover keyboard navigation, the skip link, visible focus,
 landmarks and heading order, 200%/400% reflow, contrast, and screen-reader announcements.

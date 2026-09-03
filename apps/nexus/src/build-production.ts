@@ -8,6 +8,7 @@ import { createNexusReadinessSurfaces } from './readiness.js';
 import { PROVIDER_SITES, renderProductionProviderPage } from './production.js';
 
 export const PRODUCTION_OUTPUT_DIRECTORY = 'dist/cloudflare';
+export const STATIC_ASSET_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
 
 export async function buildProductionAssets(repositoryRoot: string): Promise<void> {
   const outputRoot = resolve(repositoryRoot, PRODUCTION_OUTPUT_DIRECTORY);
@@ -43,6 +44,7 @@ export async function buildProductionAssets(repositoryRoot: string): Promise<voi
     '.well-known/agent-skills/index.json': surfaces.agentSkillsIndexJson,
     '.well-known/agent-skills/continue-procurement-mission/SKILL.md':
       surfaces.heroSkillMarkdown,
+    'favicon.svg': surfaces.faviconSvg,
     'og-image.svg': surfaces.ogImageSvg,
     _headers: nexusStaticHeaders(PRODUCTION_ORIGINS.nexus),
   };
@@ -80,12 +82,12 @@ export async function buildProductionAssets(repositoryRoot: string): Promise<voi
 }
 
 function staticHeaders(): string {
-  return `/*\n  Cache-Control: no-store\n  Origin-Agent-Cluster: ?1\n`;
+  return `/*\n  Cache-Control: ${STATIC_ASSET_CACHE_CONTROL}\n  Origin-Agent-Cluster: ?1\n`;
 }
 
 function nexusStaticHeaders(origin: string): string {
   return `/*
-  Cache-Control: no-store
+  Cache-Control: ${STATIC_ASSET_CACHE_CONTROL}
   Origin-Agent-Cluster: ?1
   Link: <${origin}/index.md>; rel="alternate"; type="text/markdown", <${origin}/.well-known/ard.json>; rel="ard"; type="application/json", <${origin}/.well-known/agent-skills/index.json>; rel="agent-skills"; type="application/json"
   X-Content-Type-Options: nosniff

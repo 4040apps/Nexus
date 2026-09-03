@@ -38,6 +38,7 @@ export const PRODUCTION_READINESS_PATHS = [
   '/.well-known/ard.json',
   '/.well-known/agent-skills/index.json',
   '/.well-known/agent-skills/continue-procurement-mission/SKILL.md',
+  '/favicon.svg',
   '/og-image.svg',
 ] as const;
 
