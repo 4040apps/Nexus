@@ -12,6 +12,18 @@ import {
 const TEST_ORIGIN = 'https://nexus.example.org';
 const HERO_SKILL_PATH = '/.well-known/agent-skills/continue-procurement-mission/SKILL.md';
 
+function visibleArticleText(html: string): string {
+  const article = html.match(/<article class="content-page">(?<content>.*?)<\/article>/s);
+  return (article?.groups?.content ?? '')
+    .replaceAll(/<[^>]+>/g, ' ')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&amp;', '&')
+    .replaceAll(/\s+/g, ' ')
+    .replaceAll(/\s+([,.;:!?])/g, '$1')
+    .trim();
+}
+
 describe('NEXUS agent-readiness surfaces', () => {
   it('uses a configurable canonical production origin consistently', () => {
     const surfaces = createNexusReadinessSurfaces({ canonicalOrigin: `${TEST_ORIGIN}/` });
@@ -183,6 +195,33 @@ describe('NEXUS agent-readiness surfaces', () => {
     expect(notFound.body).toContain('/llms.txt');
     expect(notFound.body).toContain('/developers');
     expect(surfaces.html).toContain('a:focus-visible');
+  });
+
+  it('keeps every trust-anchor page substantive and fact-specific', () => {
+    const surfaces = createNexusReadinessSurfaces({ canonicalOrigin: TEST_ORIGIN });
+    const trustPages = [
+      ['about', surfaces.aboutHtml],
+      ['contact', surfaces.contactHtml],
+      ['privacy', surfaces.privacyHtml],
+    ] as const;
+
+    for (const [name, html] of trustPages) {
+      expect(visibleArticleText(html).length, `${name} visible prose`).toBeGreaterThanOrEqual(500);
+    }
+
+    const contact = visibleArticleText(surfaces.contactHtml);
+    expect(contact).toContain('maintained publicly by 4040apps');
+    expect(contact).toContain('GitHub Issues is the public support and bug-report channel');
+    expect(contact).toContain('steps needed to reproduce it');
+    expect(contact).toContain('GitHub Issues are public');
+    expect(contact).toContain('Do not submit passwords, access tokens, credentials');
+
+    const privacy = visibleArticleText(surfaces.privacyHtml);
+    expect(privacy).toContain('no user accounts, login, authentication service, payment flow');
+    expect(privacy).toContain('deterministic synthetic data');
+    expect(privacy).toContain('does not intentionally ask for or collect');
+    expect(privacy).toContain('Cloudflare, GitHub, a browser, a network operator');
+    expect(privacy).toContain('GitHub Issues, but those issues are public');
   });
 
   it('validates the complete graph and detects a broken advertised endpoint', () => {

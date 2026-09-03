@@ -443,26 +443,36 @@ function renderDevelopersHtml(origin: string, structuredData: NexusStructuredDat
 function renderAboutHtml(origin: string, structuredData: NexusStructuredData): string {
   return renderContentPage(origin, structuredData, '/about', 'About', 'About the NEXUS deterministic public hackathon sandbox and its intent-continuity mission.', `<h1>About NEXUS</h1>
 <p class="lead"><strong>Websites end. Human intentions don't.</strong></p>
-<p>NEXUS demonstrates fulfillment, explicit Intent Handoff, recovery and rerouting, human approval, and Goal Complete across independent agent-ready providers.</p>
-<p>The canonical mission opens an office for 20 people in Guadalajara before 2026-10-01 with a MXN 500,000 budget. Its data and outcomes are deterministic and synthetic so the three-minute hackathon narrative remains reproducible.</p>
+<p>NEXUS is an open-source proof of concept maintained by 4040apps. It demonstrates fulfillment, explicit Intent Handoff, recovery and rerouting, human approval, and Goal Complete across independent agent-ready providers. The mission dashboard keeps requirements, budget, deadline, provider assignments, failures, approvals, and the activity timeline visible instead of asking a user to trust chat text alone.</p>
+<p>The canonical mission opens an office for 20 people in Guadalajara before 2026-10-01 with a MXN 500,000 budget. OfficePro fulfills desks and chairs before the user authorizes NEXUS to continue the remaining work. TechSupply supplies computers, FiberMX reports an installation date outside the deadline, NetBusiness provides the valid internet reroute, and SecureNow pauses before commitment for explicit human approval.</p>
+<h2>Why the demo is deterministic</h2>
+<p>Provider data and outcomes are synthetic and fixed so the same failure, reroute, approval boundary, final MXN 410,000 cost, and completed mission can be inspected repeatedly. Each provider still owns its own demo catalog and WebMCP execution. NEXUS preserves the shared Goal State and the minimum remaining intent; it does not hide all providers behind a central procurement API.</p>
 <h2>What this is not</h2>
-<p>This public sandbox is not a real marketplace, procurement service, payment processor, supplier registry, or production integration. It intentionally publishes no REST API, OAuth service, MCP server, pricing program, SDK, or CLI.</p>
+<p>This public sandbox is not a real marketplace, procurement service, payment processor, supplier registry, or production integration. It cannot place a real order or represent real supplier availability. It intentionally publishes no REST API, OAuth service, MCP server, pricing program, SDK, or CLI. Its purpose is limited to showing the implemented NEXUS architecture and hero flow clearly and reproducibly.</p>
 <p class="actions"><a href="/">Open the mission</a><a href="${GITHUB_REPOSITORY}">Inspect the source</a></p>`);
 }
 
 function renderContactHtml(origin: string, structuredData: NexusStructuredData): string {
   return renderContentPage(origin, structuredData, '/contact', 'Contact', 'How to report NEXUS demo defects and discuss the public proof of concept.', `<h1>Contact</h1>
 <p class="lead">NEXUS is maintained publicly by 4040apps.</p>
-<p>Report reproducible defects, accessibility problems, or documentation errors through the repository's public issue tracker. Do not submit secrets, personal information, real supplier data, or real procurement requests.</p>
+<p><a href="${GITHUB_REPOSITORY}/issues">GitHub Issues</a> is the public support and bug-report channel for this hackathon proof of concept. Appropriate reports include reproducible hero-flow failures, incorrect Goal State transitions, WebMCP discovery or permission errors, broken readiness routes, accessibility barriers, documentation mistakes, and production pages that do not match the repository's stated architecture.</p>
+<h2>What to include in a report</h2>
+<p>Describe the page or provider where the problem occurred, the steps needed to reproduce it, the result you expected, and the result you observed. For browser or WebMCP problems, include the browser name and version, whether WebMCP was explicitly enabled, the provider step that failed, and a redacted error message or console excerpt when useful. Include the deployed URL and commit or deployment identifier if they are visible. A minimal repeatable report helps maintainers distinguish an application defect from an unsupported runtime or an origin-permission mismatch.</p>
+<h2>Public channel and sensitive information</h2>
+<p>GitHub Issues are public and may be read, copied, or indexed by others. Do not submit passwords, access tokens, credentials, personal contact details, payment information, confidential supplier terms, real quotes, real availability, real procurement instructions, or any other information that should not be public. Use synthetic demo values when an example is needed. NEXUS has no private support intake, email address, telephone number, or physical support location advertised by this project.</p>
 <p class="actions"><a href="${GITHUB_REPOSITORY}/issues">Open GitHub Issues</a><a href="${GITHUB_REPOSITORY}">View repository</a></p>`);
 }
 
 function renderPrivacyHtml(origin: string, structuredData: NexusStructuredData): string {
   return renderContentPage(origin, structuredData, '/privacy', 'Privacy', 'Privacy boundaries for the deterministic NEXUS public hackathon sandbox.', `<h1>Privacy</h1>
 <p class="lead">Use synthetic information only.</p>
-<p>The NEXUS demo does not provide accounts, authentication, payments, or a production data store. Its mission state and provider outcomes are deterministic browser-demo data, and the application does not intentionally collect or sell personal information.</p>
-<p>The hosting provider may process standard request metadata under its own policies. Do not enter personal information, credentials, secrets, real payment details, supplier-confidential data, or real procurement instructions into this public sandbox.</p>
-<p>For a repository-level concern, use <a href="${GITHUB_REPOSITORY}/issues">GitHub Issues</a>.</p>`);
+<h2>Application data</h2>
+<p>The NEXUS demo provides no user accounts, login, authentication service, payment flow, or production datastore. Its office mission, provider catalog examples, prices, availability, deadline conflict, reroute, and approval proposal are deterministic synthetic data used only to demonstrate the hero flow. Mission state runs as browser-demo state and can be returned to the fixed starting point with the reset control.</p>
+<p>The application itself does not intentionally ask for or collect names, email addresses, postal addresses, credentials, payment details, real supplier records, or real procurement requirements. It has no signup form, private message form, checkout, analytics integration, or account profile in the implemented repository. These statements describe the NEXUS application code; they are not a guarantee about every network or browser component outside the application.</p>
+<h2>Hosting and external services</h2>
+<p>The public pages are delivered using Cloudflare infrastructure, and links on this site may open the public GitHub repository. Cloudflare, GitHub, a browser, a network operator, or other infrastructure may process ordinary request metadata such as an IP address, timestamp, user agent, requested URL, or diagnostic logs under their own configurations and policies. NEXUS does not claim to control those independent services or make privacy guarantees on their behalf.</p>
+<h2>What not to submit</h2>
+<p>Do not enter or publish personal information, passwords, tokens, credentials, real payment details, confidential supplier data, real quotes, real availability, or real procurement instructions in this sandbox. Repository questions and defects may be reported through <a href="${GITHUB_REPOSITORY}/issues">GitHub Issues</a>, but those issues are public and may be indexed or copied. Reports must use synthetic examples and must not contain sensitive information.</p>`);
 }
 
 function renderNotFoundHtml(origin: string, structuredData: NexusStructuredData): string {
