@@ -119,7 +119,7 @@ Prioritize roughly in this order:
 Before submission:
 
 - live working deployment;
-- repository made public when submission rules require it;
+- public open-source repository ready for judge review;
 - concise project description;
 - architecture diagram;
 - reliable demo script/video;

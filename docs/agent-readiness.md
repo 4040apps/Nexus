@@ -11,24 +11,26 @@ The first real Ora scan was recorded in the
 [Issue #34 implementation comment](https://github.com/4040apps/Nexus/issues/34#issuecomment-5519205005).
 After the first truthful implementation pass was deployed, the recorded
 [follow-up scan](https://github.com/4040apps/Nexus/issues/34#issuecomment-5520083380)
-measured 61/100. That is the latest external score and the starting point for this final
-polish; the repository does not infer a score from local checks.
+measured 61/100. The
+[final truthful scan](https://github.com/4040apps/Nexus/issues/34#issuecomment-5521095734)
+measured 66/100 after the bounded readiness polish. That is the frozen external score;
+the repository does not infer scores from local checks.
 
 | Measurement | Current evidence | Result |
 | --- | --- | --- |
-| Ora external audit | Recorded follow-up scan | **61/100 (C)**; initial baseline **39/100 (D)** |
-| Ora discovery layer | Recorded follow-up scan | **6/12** |
-| Ora access layer | Recorded follow-up scan | **45/60** |
-| Ora usability layer | Recorded follow-up scan | **33/60** |
-| Ora WebMCP check | Recorded follow-up scan | **PASS, 5/5** |
+| Ora external audit | Recorded final scan | **66/100 (C)**; intermediate **61/100 (C)**; baseline **39/100 (D)** |
+| Ora improvement | Recorded final scan | **+27 points / +69.2% from baseline** |
+| Ora discovery layer | Recorded final scan | **7/12** |
+| Ora access layer | Recorded final scan | **46/60** |
+| Ora usability layer | Recorded final scan | **38/62** |
+| Ora WebMCP check | Recorded final scan | **PASS, 5/5** |
 | Local readiness contract | Repository tests and `check:readiness` | **PASS** |
-| Lighthouse production baseline | Lighthouse 13.4.1 / Headless Chrome 152, commit `dd2cc98`, 2026-09-03T05:44:59Z | **Performance 93, Accessibility 100, Best Practices 96, SEO 92** |
+| Lighthouse production final | [Recorded final run](https://github.com/4040apps/Nexus/issues/38#issuecomment-5521218459), Lighthouse 13.4.1 / Headless Chrome 152 | **Performance 100, Accessibility 100, Best Practices 100, SEO 100** |
 
 The Ora comments were posted on 2026-09-03 UTC. They do not preserve an observable CLI
 version or complete scan artifacts in the repository, so this document does not invent
-either value. The 39/100 baseline and 61/100 follow-up are external evidence; local
-validation is not a replacement or an inferred rescore. No additional force scan was run
-for the final polish documented below.
+either value. The 39/100 baseline, 61/100 intermediate result, and 66/100 final result are
+external evidence; local validation is not a replacement or an inferred rescore.
 
 Ora also surfaced unrelated packages and projects with “Nexus” in their name. The npm
 `nexus` package, PyPI `nexus-cli`, skills.sh `nexus-llm-lang`, and npm
@@ -42,9 +44,9 @@ framework-independent NEXUS readiness handler now maintains these routes:
 | Route | Truthful content |
 | --- | --- |
 | `/` | Accessible mission dashboard, public-sandbox disclosure, canonical and Open Graph metadata, linked JSON-LD, and discovery links |
-| `/developers` | WebMCP architecture, independent provider origins, permission/approval boundaries, local and production usage, and source links qualified as access-controlled |
+| `/developers` | WebMCP architecture, independent provider origins, permission/approval boundaries, local and production usage, and public source links |
 | `/about` | Product thesis, canonical hero mission, and explicit proof-of-concept limits |
-| `/contact` | Access-controlled GitHub issue path and a warning not to submit sensitive or real procurement data |
+| `/contact` | Public GitHub issue path and a warning not to submit sensitive or real procurement data |
 | `/privacy` | The demo's actual browser-state/data boundaries and hosting qualification |
 | `/sandbox` | Existing deterministic hero-demo scope, controls, synthetic-data boundary, and explicit statement that this is not an API sandbox |
 | `/index.md` | Canonical Markdown representation of the product, mission, safety rules, and maintained resources |
@@ -74,9 +76,8 @@ are also visible on that page. It links to the actual
 review, readiness score, pricing, or commercial offer.
 
 The repository URL reported by the readiness scan was checked directly through GitHub.
-It is the real `4040apps/Nexus` repository, but it is access-controlled. The link is
-retained as the authoritative source location and the rendered pages qualify that GitHub
-access is required; they do not claim that the source or its Issues are public.
+`4040apps/Nexus` is now the public, open-source, authoritative source repository, and its
+GitHub Issues are the public project support and bug-report channel.
 
 ## Agent Skills and ARD validity
 
@@ -150,33 +151,26 @@ metadata discovery links, sandbox disclosure, semantic main content, and the hel
 Production preflight ensures every generated asset exists, contains no localhost or
 insecure production origin, and preserves the Agent Skill digest and CORS/Link headers.
 
-## Deploy, rescan, and record the outcome
+## Frozen Agent Readiness result
 
-The latest external result remains 61/100. This final polish does not claim another score
-and must not trigger an Ora force scan. If a normal future measurement is deliberately
-scheduled after the PR's immutable commit is deployed to the same production domain:
+The final external result is **66/100 (C)**, up from **39/100 (D)** through truthful
+readiness work while WebMCP remains **5/5**. The result stops below the >=95 target because
+the remaining generic scanner recommendations require products NEXUS does not provide,
+including REST/OpenAPI, OAuth/OIDC, an HTTP MCP server, A2A, NLWeb, pricing, payments,
+SDKs, and CLIs. Those surfaces will not be fabricated for score. No further score-driven
+architecture changes are planned before demo freeze.
 
-1. Verify `/`, all sitemap pages, `/index.md`, `/llms.txt`, both `.well-known` indexes, and
-   the linked `SKILL.md` return the expected status and content type.
-2. Run Ora with the same command and preserve the complete JSON output.
-3. Record the deployed commit, Cloudflare deployment ID, final redirected URL, observable
-   scanner version, ISO 8601 timestamp, overall score, layer scores, and findings.
-4. Compare against the 61/100 latest result and retain the original 39/100 baseline. Do
-   not relabel local checks as an external score.
-5. If the score remains below 95, accept only fixes backed by real implemented behavior;
-   document all intentionally absent surfaces instead of fabricating them.
-
-## Lighthouse baseline and evidence-backed fixes
+## Lighthouse production result and evidence-backed fixes
 
 Issue #38 captured the required production baseline before changing application code. The
 full JSON report is versioned as [`lighthouse-nexus.json`](../lighthouse-nexus.json).
 
-| Category | Production baseline |
-| --- | ---: |
-| Performance | **93** |
-| Accessibility | **100** |
-| Best Practices | **96** |
-| SEO | **92** |
+| Category | Production baseline | Production final |
+| --- | ---: | ---: |
+| Performance | **93** | **100** |
+| Accessibility | **100** | **100** |
+| Best Practices | **96** | **100** |
+| SEO | **92** | **100** |
 
 The run used Lighthouse 13.4.1 and Headless Chrome 152 against the final displayed URL
 `https://nexus.1expert.pro/` at 2026-09-03T05:44:59Z. It reported no run warnings and no
@@ -203,16 +197,10 @@ exact OfficePro origin supplied by the environment map; and deterministic static
 use `public, max-age=0, must-revalidate` instead of `no-store`. The revalidation policy
 avoids stale unfingerprinted assets while allowing browser history restoration.
 
-The user requested review before deployment, so this PR does not claim a post-change
-production score. After the reviewed commit is deployed, rerun the exact Lighthouse
-command and record the four final production scores. The >=95 production target remains
-pending until that measurement exists.
-
-A post-build smoke run against the generated NEXUS static assets scored 100 in all four
-categories and confirmed that the favicon console error, invalid robots directive,
-back/forward-cache failure, and OfficePro preconnect opportunity were absent. That local
-result validates the generated artifacts, but it is not presented as a production score
-because it cannot reproduce Cloudflare latency, headers, or injected analytics.
+After the reviewed changes were deployed, the recorded production rerun scored **100 in
+all four categories**, exceeding the >=95 target. The final run had no run warnings. Its
+remaining informational cache finding concerns Cloudflare's injected analytics asset,
+not a repository-owned resource.
 
 ## Manual accessibility audit
 
