@@ -4,21 +4,65 @@
 >
 > **Websites end. Human intentions don't.**
 
-NEXUS is a WebMCP-first proof of concept for the OpenAI WebMCP Challenge. It demonstrates how a user's goal can continue across independent agent-ready websites when the first provider can only partially fulfill the intent.
+WebMCP gives agents tools inside a website. **NEXUS lets the user's intent continue beyond it.**
+
+NEXUS is an open-source, WebMCP-first proof of concept for the OpenAI WebMCP Challenge.
+It preserves a user's remaining goal across independent agent-ready providers, makes
+failure and recovery visible, and requires explicit human approval before commitments.
+
+## Live Demo / Evidence
+
+- **Live demo:** [https://nexus.1expert.pro](https://nexus.1expert.pro)
+- **Public repository:** [https://github.com/4040apps/Nexus](https://github.com/4040apps/Nexus)
+
+| Evidence | Result |
+| --- | --- |
+| Native WebMCP | 16 genuine provider-owned WebMCP tools |
+| Provider independence | 5 independent providers across 6 HTTPS origins |
+| Cross-origin execution | WebMCP tool discovery and invocation validated end to end |
+| Recovery | FiberMX failure preserved; internet rerouted to NetBusiness |
+| Human control | Explicit approval required for commitment-class actions |
+| End-to-end proof | ChatGPT hero mission validated through Goal Complete |
+| Final mission | MXN 410,000 used / MXN 90,000 remaining; deadline satisfied |
+| Agent Readiness | 39 → 61 → **66** (+27 points / +69.2%); WebMCP **5/5** |
+| Production Lighthouse | **100** Performance / **100** Accessibility / **100** Best Practices / **100** SEO |
+
+## Why NEXUS
+
+Websites and providers have boundaries; human goals often do not. A furniture provider
+may complete one part of opening an office, while computers, connectivity, and security
+still require other independent providers.
+
+NEXUS carries only the remaining intent and necessary constraints across those boundaries.
+It preserves provider ownership, records blocked paths, reroutes unresolved work, and
+keeps the human in control of every commitment.
 
 ## Hero mission
 
 > Open an office for 20 people in Guadalajara before October 1, 2026 with a MXN $500,000 budget.
 
-The demo must prove one complete flow:
+```mermaid
+flowchart TD
+    A[Human Intent] --> B[OfficePro]
+    B --> C[40% fulfilled]
+    C --> D[Intent Handoff]
+    D --> E[TechSupply]
+    E --> F[60%]
+    F --> G[FiberMX]
+    G --> H[BLOCKED — DELIVERY_DEADLINE]
+    H --> I[NetBusiness reroute]
+    I --> J[80%]
+    J --> K[SecureNow]
+    K --> L[REQUIRES_HUMAN]
+    L --> M[Explicit Human Approval]
+    M --> N[GOAL COMPLETE — 100%]
+```
 
-`Fulfillment -> Handoff -> Recovery/Reroute -> Human Approval -> Goal Complete`
+## Brand Mode and Broker Mode
 
-## Product principle
-
-WebMCP gives agents tools inside a website. NEXUS lets the user's intent continue beyond it.
-
-NEXUS does not silently divert a user away from a provider. A user who deliberately starts on a provider site remains in **Brand Mode**. Continuation to other providers requires an explicit handoff/authorization into **Broker Mode**.
+NEXUS does not silently divert a user away from a provider. A user who deliberately
+starts on a provider site remains in **Brand Mode**. Continuation to other providers
+requires an explicit Intent Handoff and user authorization into **Broker Mode**.
 
 ## Workspace
 
@@ -149,13 +193,13 @@ pnpm --filter @nexus/app-nexus build
 pnpm --filter @nexus/app-nexus check:readiness -- https://nexus.your-domain.example
 ```
 
-The first Ora audit of `https://nexus.1expert.pro` established a real **39/100 (D)**
-baseline. The recorded post-deployment follow-up measured **61/100 (C)**, with WebMCP
-still passing **5/5**. Issue #34's final polish adds only truthful maintained surfaces;
-it does not claim another external score, and no Ora force scan is part of this change.
-The pre-change Issue #38 production Lighthouse baseline is **93 Performance, 100
-Accessibility, 96 Best Practices, and 92 SEO**. The evidence policy, exact Lighthouse
-findings, accessibility checklist, deliberately absent surfaces, and measurement history are in
+Production Agent Readiness improved **39 → 61 → 66** through truthful discovery and
+accessibility hardening: **+27 points / +69.2% from baseline**, with WebMCP passing
+**5/5**. This is not a claim of >=95; NEXUS deliberately does not fabricate API, OAuth,
+MCP-server, A2A, SDK, CLI, pricing, or payment surfaces to raise a generic score.
+Final production Lighthouse is **100 Performance, 100 Accessibility, 100 Best Practices,
+and 100 SEO**. The evidence policy, exact findings, accessibility checklist, deliberately
+absent surfaces, and measurement history are in
 [`docs/agent-readiness.md`](docs/agent-readiness.md#targets-and-measured-baseline).
 
 ## Cloudflare production deployment
