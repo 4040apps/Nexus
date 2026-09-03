@@ -7,7 +7,7 @@ import { createInitialHeroGoalState } from './dashboard-fixtures.js';
 
 const GITHUB_REPOSITORY = 'https://github.com/4040apps/Nexus';
 const GITHUB_ORGANIZATION = 'https://github.com/4040apps';
-const READINESS_LAST_MODIFIED = '2026-09-02';
+const READINESS_LAST_MODIFIED = '2026-09-03';
 const HERO_SKILL_NAME = 'continue-procurement-mission';
 const HERO_SKILL_PATH = `/.well-known/agent-skills/${HERO_SKILL_NAME}/SKILL.md` as const;
 
@@ -17,7 +17,14 @@ export const NEXUS_READINESS_ROUTES = [
   '/about',
   '/contact',
   '/privacy',
+  '/sandbox',
   '/index.md',
+  '/developers.md',
+  '/about.md',
+  '/contact.md',
+  '/privacy.md',
+  '/sandbox.md',
+  '/developers/llms.txt',
   '/robots.txt',
   '/sitemap.xml',
   '/llms.txt',
@@ -67,9 +74,25 @@ type SoftwareApplicationStructuredData = {
   featureList: readonly string[];
 };
 
+type FaqPageStructuredData = {
+  '@type': 'FAQPage';
+  '@id': string;
+  mainEntity: readonly {
+    '@type': 'Question';
+    name: string;
+    acceptedAnswer: { '@type': 'Answer'; text: string };
+  }[];
+};
+
+type NexusStructuredDataNode =
+  | OrganizationStructuredData
+  | WebSiteStructuredData
+  | SoftwareApplicationStructuredData
+  | FaqPageStructuredData;
+
 export type NexusStructuredData = {
   '@context': 'https://schema.org';
-  '@graph': readonly [OrganizationStructuredData, WebSiteStructuredData, SoftwareApplicationStructuredData];
+  '@graph': readonly NexusStructuredDataNode[];
 };
 
 export type NexusReadinessSurfaces = {
@@ -80,7 +103,14 @@ export type NexusReadinessSurfaces = {
   aboutHtml: string;
   contactHtml: string;
   privacyHtml: string;
+  sandboxHtml: string;
   indexMarkdown: string;
+  developersMarkdown: string;
+  aboutMarkdown: string;
+  contactMarkdown: string;
+  privacyMarkdown: string;
+  sandboxMarkdown: string;
+  developersLlmsTxt: string;
   robotsTxt: string;
   sitemapXml: string;
   llmsTxt: string;
@@ -110,7 +140,14 @@ const CONTENT_TYPES: Readonly<Record<NexusReadinessRoute, string>> = {
   '/about': 'text/html; charset=utf-8',
   '/contact': 'text/html; charset=utf-8',
   '/privacy': 'text/html; charset=utf-8',
+  '/sandbox': 'text/html; charset=utf-8',
   '/index.md': 'text/markdown; charset=utf-8',
+  '/developers.md': 'text/markdown; charset=utf-8',
+  '/about.md': 'text/markdown; charset=utf-8',
+  '/contact.md': 'text/markdown; charset=utf-8',
+  '/privacy.md': 'text/markdown; charset=utf-8',
+  '/sandbox.md': 'text/markdown; charset=utf-8',
+  '/developers/llms.txt': 'text/plain; charset=utf-8',
   '/robots.txt': 'text/plain; charset=utf-8',
   '/sitemap.xml': 'application/xml; charset=utf-8',
   '/llms.txt': 'text/plain; charset=utf-8',
@@ -131,6 +168,24 @@ const CONTENT_PAGE_STYLES = `
   .content-page .lead { color: var(--text); font-size: 1.18rem; }
   .content-page .actions { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
 `;
+
+const DEVELOPER_FAQ = [
+  {
+    question: 'Is NEXUS a public HTTP API?',
+    answer:
+      'No. NEXUS is a browser-based WebMCP proof of concept. It has no public REST API, OpenAPI description, OAuth service, or HTTP MCP server.',
+  },
+  {
+    question: 'Where does provider business data live?',
+    answer:
+      'Each independent provider owns its catalog, pricing, stock, availability, constraints, validation, and tool execution. NEXUS stores only mission continuity state and discovery metadata.',
+  },
+  {
+    question: 'When is human approval required?',
+    answer:
+      'Commitment actions such as purchases, reservations, signatures, quote acceptance, and installation requests require explicit, proposal-bound human approval.',
+  },
+] as const;
 
 function isLocalHostname(hostname: string): boolean {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
@@ -164,7 +219,20 @@ function renderRobotsTxt(origin: string): string {
 }
 
 function renderSitemapXml(origin: string): string {
-  const indexedPaths = ['/', '/developers', '/about', '/contact', '/privacy', '/index.md'];
+  const indexedPaths = [
+    '/',
+    '/developers',
+    '/about',
+    '/contact',
+    '/privacy',
+    '/sandbox',
+    '/index.md',
+    '/developers.md',
+    '/about.md',
+    '/contact.md',
+    '/privacy.md',
+    '/sandbox.md',
+  ];
   const urls = indexedPaths.map((path) => `  <url>\n    <loc>${escapeXml(`${origin}${path}`)}</loc>\n    <lastmod>${READINESS_LAST_MODIFIED}</lastmod>\n  </url>`).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -205,7 +273,10 @@ function renderLlmsTxt(origin: string): string {
 
 - [Canonical Markdown overview](${origin}/index.md)
 - [Developer guide](${origin}/developers)
+- [Developer guide in Markdown](${origin}/developers.md)
+- [Scoped developer context](${origin}/developers/llms.txt)
 - [About the public sandbox](${origin}/about)
+- [Canonical sandbox page](${origin}/sandbox)
 - [Privacy](${origin}/privacy)
 - [NEXUS source repository](${GITHUB_REPOSITORY})
 - [Agent operating contract](${GITHUB_REPOSITORY}/blob/main/AGENTS.md)
@@ -221,8 +292,27 @@ function renderLlmsTxt(origin: string): string {
 `;
 }
 
+function markdownFrontmatter(
+  title: string,
+  description: string,
+  canonicalUrl: string,
+): string {
+  return `---
+title: ${JSON.stringify(title)}
+description: ${JSON.stringify(description)}
+canonical: ${JSON.stringify(canonicalUrl)}
+last-updated: ${JSON.stringify(READINESS_LAST_MODIFIED)}
+---
+
+`;
+}
+
 function renderIndexMarkdown(origin: string): string {
-  return `# NEXUS
+  return `${markdownFrontmatter(
+    'NEXUS — Intent continuity across providers',
+    'A deterministic WebMCP-first public hackathon sandbox for continuing intent across independent providers.',
+    `${origin}/`,
+  )}# NEXUS
 
 NEXUS is a WebMCP-first, deterministic public hackathon sandbox for continuing a human's remaining intent across independent providers.
 
@@ -251,6 +341,193 @@ Open [the NEXUS mission dashboard](${origin}/) and follow its visible controls a
 - [ARD manifest](${origin}/.well-known/ard.json)
 - [Public source](${GITHUB_REPOSITORY})
 - [AGENTS.md operating contract](${GITHUB_REPOSITORY}/blob/main/AGENTS.md)
+`;
+}
+
+function renderDevelopersMarkdown(origin: string): string {
+  return `${markdownFrontmatter(
+    'Developer guide — NEXUS',
+    'The real NEXUS WebMCP architecture, runtime requirements, approval boundaries, commands, and maintained sources.',
+    `${origin}/developers`,
+  )}# Developer guide
+
+NEXUS is a browser-based WebMCP proof of concept, not a public HTTP API.
+
+## Architecture
+
+The consumer mission dashboard runs at ${origin}. OfficePro, TechSupply, FiberMX, NetBusiness, and SecureNow run on independent origins. Each provider registers genuine tools with \`document.modelContext\`; provider-owned catalog, pricing, stock, availability, constraints, and validation remain on that provider origin.
+
+NEXUS preserves only Goal State and the minimum remaining-intent handoff. It does not proxy provider business logic through invented REST endpoints.
+
+## Permission and approval boundaries
+
+The controlled cross-origin path was validated with Chrome 151+ launched using \`--enable-features=WebMCP\`. Provider \`fromOrigins\`, tool \`exposedTo\`, and iframe \`allow="tools"\` restrict exposure to the authorized NEXUS origin. Chrome 151 is not claimed to enable WebMCP by default.
+
+Read and planning operations may run autonomously after an explicit Intent Handoff. Purchases, reservations, signing, quote acceptance, and installation commitments require a separate, proposal-bound human approval.
+
+## Local and production usage
+
+From a repository checkout, install with \`pnpm install --frozen-lockfile\`, run the six-origin local hero with \`pnpm demo:hero\`, and build production static assets with \`pnpm build:production\`. The linked GitHub repository requires access granted by its owner.
+
+## Frequently asked questions
+
+### Is NEXUS a public HTTP API?
+
+No. NEXUS is a browser-based WebMCP proof of concept. It has no public REST API, OpenAPI description, OAuth service, or HTTP MCP server.
+
+### Where does provider business data live?
+
+Each independent provider owns its catalog, pricing, stock, availability, constraints, validation, and tool execution. NEXUS stores only mission continuity state and discovery metadata.
+
+### When is human approval required?
+
+Commitment actions such as purchases, reservations, signatures, quote acceptance, and installation requests require explicit, proposal-bound human approval.
+
+## Maintained references
+
+- [Source repository (GitHub access required)](${GITHUB_REPOSITORY})
+- [AGENTS.md operating contract](${GITHUB_REPOSITORY}/blob/main/AGENTS.md)
+- [Architecture](${GITHUB_REPOSITORY}/blob/main/docs/architecture.md)
+- [WebMCP validation](${GITHUB_REPOSITORY}/blob/main/docs/webmcp.md)
+- [Deployment](${GITHUB_REPOSITORY}/blob/main/docs/deployment.md)
+`;
+}
+
+function renderAboutMarkdown(origin: string): string {
+  return `${markdownFrontmatter(
+    'About NEXUS',
+    'The mission, architecture, and limits of the deterministic NEXUS public hackathon sandbox.',
+    `${origin}/about`,
+  )}# About NEXUS
+
+**Websites end. Human intentions don't.**
+
+NEXUS is a proof of concept maintained by 4040apps. It demonstrates fulfillment, explicit Intent Handoff, recovery and rerouting, human approval, and Goal Complete across independent agent-ready providers. The mission dashboard keeps requirements, budget, deadline, provider assignments, failures, approvals, and the activity timeline visible.
+
+The canonical mission opens an office for 20 people in Guadalajara before 2026-10-01 with a MXN 500,000 budget. OfficePro fulfills desks and chairs before the user authorizes NEXUS to continue. TechSupply supplies computers, FiberMX reports a late installation date, NetBusiness provides the valid internet reroute, and SecureNow pauses before commitment for explicit human approval.
+
+## Why the demo is deterministic
+
+Provider data and outcomes are synthetic and fixed so the same failure, reroute, approval boundary, final MXN 410,000 cost, and completed mission can be inspected repeatedly. Each provider still owns its own demo catalog and WebMCP execution. NEXUS preserves shared Goal State and the minimum remaining intent; it does not hide providers behind a central procurement API.
+
+## What this is not
+
+This sandbox is not a real marketplace, procurement service, payment processor, supplier registry, or production integration. It cannot place a real order or represent real supplier availability. It intentionally publishes no REST API, OAuth service, MCP server, pricing program, SDK, or CLI.
+
+- [Open the mission](${origin}/)
+- [Inspect the source](${GITHUB_REPOSITORY})
+`;
+}
+
+function renderContactMarkdown(origin: string): string {
+  return `${markdownFrontmatter(
+    'Contact — NEXUS',
+    'The repository support and reproducible bug-reporting path for the NEXUS hackathon proof of concept.',
+    `${origin}/contact`,
+  )}# Contact
+
+NEXUS is maintained by 4040apps. [GitHub Issues](${GITHUB_REPOSITORY}/issues) is its support and bug-report channel for repository collaborators. The repository is access-controlled, so the link requires GitHub access granted by its owner; NEXUS does not advertise a separate public or private intake channel.
+
+Appropriate reports include reproducible hero-flow failures, incorrect Goal State transitions, WebMCP discovery or permission errors, broken readiness routes, accessibility barriers, documentation mistakes, and production pages that do not match the repository's architecture.
+
+## What to include in a report
+
+Describe the affected page or provider, reproduction steps, expected result, and observed result. For browser or WebMCP problems, include the browser version, whether WebMCP was explicitly enabled, the failed provider step, and a redacted error or console excerpt when useful. Include the deployed URL and commit or deployment identifier if visible.
+
+## Repository channel and sensitive information
+
+Issue content may be read or copied by people with repository access and may become public if repository visibility changes. Do not submit passwords, access tokens, credentials, personal contact details, payment information, confidential supplier terms, real quotes, real availability, real procurement instructions, or other non-public information. Use synthetic demo values. NEXUS advertises no separate support intake, email address, telephone number, or physical support location.
+`;
+}
+
+function renderPrivacyMarkdown(origin: string): string {
+  return `${markdownFrontmatter(
+    'Privacy — NEXUS',
+    'The application-data and infrastructure boundaries of the deterministic NEXUS public sandbox.',
+    `${origin}/privacy`,
+  )}# Privacy
+
+Use synthetic information only.
+
+## Application data
+
+The NEXUS demo provides no user accounts, login, authentication service, payment flow, or production datastore. Its office mission, provider examples, prices, availability, deadline conflict, reroute, and approval proposal are deterministic synthetic data used only for the hero flow. Mission state runs as browser-demo state and can be reset to the fixed starting point.
+
+The application itself does not intentionally ask for or collect names, email addresses, postal addresses, credentials, payment details, real supplier records, or real procurement requirements. It has no signup form, private message form, checkout, analytics integration, or account profile in the implemented repository. This describes NEXUS application code, not every external network or browser component.
+
+## Hosting and external services
+
+Cloudflare delivers the public pages, and links may open GitHub. Cloudflare, GitHub, a browser, a network operator, or other infrastructure may process ordinary request metadata under their own configurations and policies. NEXUS does not claim to control those services or make privacy guarantees for them.
+
+## What not to submit
+
+Do not enter or publish personal information, passwords, tokens, credentials, real payment details, confidential supplier data, real quotes, real availability, or real procurement instructions. [GitHub Issues](${GITHUB_REPOSITORY}/issues) require repository access; issue content may be copied by collaborators or become public if repository visibility changes. Reports must use synthetic examples and contain no sensitive information.
+`;
+}
+
+function renderSandboxMarkdown(origin: string): string {
+  return `${markdownFrontmatter(
+    'NEXUS public sandbox',
+    'The canonical deterministic production demo and its synthetic-data, runtime, and commitment boundaries.',
+    `${origin}/sandbox`,
+  )}# NEXUS public sandbox
+
+The production NEXUS site is itself the public sandbox for the deterministic hackathon hero flow. There is no separate API sandbox, credential, account, or production-data environment.
+
+The sandbox opens a synthetic office-procurement mission for 20 people in Guadalajara. Its fixed provider data makes the partial fulfillment, explicit handoff, deadline failure, internet reroute, human approval, and Goal Complete outcome reproducible.
+
+Genuine cross-origin WebMCP requires Chrome 151+ launched with \`--enable-features=WebMCP\`. The normal provider websites remain usable when WebMCP is unavailable, and the UI must not label fallback transport as WebMCP.
+
+No action creates a real order, reservation, payment, supplier quote, or installation. Use only synthetic information.
+
+- [Open the deterministic mission](${origin}/)
+- [Read the developer guide](${origin}/developers)
+- [Inspect the source (GitHub access required)](${GITHUB_REPOSITORY})
+`;
+}
+
+function renderDevelopersLlmsTxt(origin: string): string {
+  return `# NEXUS developer context
+
+> Scoped technical context for the deterministic NEXUS public WebMCP sandbox.
+
+## Product boundary
+
+- NEXUS is a browser-based proof of concept, not a public HTTP API.
+- NEXUS has no REST or GraphQL API, OpenAPI document, OAuth or OIDC service, HTTP MCP server, A2A endpoint, payment API, SDK, or CLI.
+
+## WebMCP architecture and runtime
+
+- Independent providers register genuine tools through document.modelContext on their own origins.
+- Chrome 151+ must be launched with --enable-features=WebMCP for the validated controlled environment; WebMCP is not enabled by default.
+- Production consumer: ${origin}
+- Provider origins: https://officepro.1expert.pro, https://techsupply.1expert.pro, https://fibermx.1expert.pro, https://netbusiness.1expert.pro, and https://securenow.1expert.pro.
+- Exact fromOrigins, exposedTo, and iframe allow="tools" permissions prevent wildcard exposure.
+- Provider catalog, pricing, stock, availability, constraints, validation, and tool execution remain provider-owned.
+
+## Approval boundaries
+
+- Broker Mode begins only after an explicit Intent Handoff for remaining requirements.
+- Read and planning operations may run after handoff.
+- Purchases, reservations, signatures, quote acceptance, and installation commitments require separate proposal-bound human approval.
+
+## Commands
+
+- Install: pnpm install --frozen-lockfile
+- Local six-origin hero: pnpm demo:hero
+- Quality gates: pnpm lint, pnpm typecheck, pnpm test, pnpm build
+- Production assets: pnpm build:production
+- Production verification: pnpm verify:production
+
+## Sources
+
+- [Developer guide](${origin}/developers)
+- [Developer guide Markdown](${origin}/developers.md)
+- [Source repository (GitHub access required)](${GITHUB_REPOSITORY})
+- [AGENTS.md](${GITHUB_REPOSITORY}/blob/main/AGENTS.md)
+- [Architecture](${GITHUB_REPOSITORY}/blob/main/docs/architecture.md)
+- [WebMCP validation](${GITHUB_REPOSITORY}/blob/main/docs/webmcp.md)
+- [Deployment](${GITHUB_REPOSITORY}/blob/main/docs/deployment.md)
 `;
 }
 
@@ -296,6 +573,7 @@ function renderArdJson(origin: string): string {
   const hostname = new URL(origin).hostname;
   const publisher = isLocalHostname(hostname) ? 'nexus.localhost' : hostname;
   return `${JSON.stringify({
+    specVersion: '1.0',
     entries: [
       {
         '@context': 'https://agenticresourcediscovery.org/context/v1',
@@ -360,12 +638,34 @@ function createStructuredData(origin: string): NexusStructuredData {
   };
 }
 
+function createDeveloperStructuredData(
+  origin: string,
+  structuredData: NexusStructuredData,
+): NexusStructuredData {
+  return {
+    ...structuredData,
+    '@graph': [
+      ...structuredData['@graph'],
+      {
+        '@type': 'FAQPage',
+        '@id': `${origin}/developers#faq`,
+        mainEntity: DEVELOPER_FAQ.map(({ question, answer }) => ({
+          '@type': 'Question' as const,
+          name: question,
+          acceptedAnswer: { '@type': 'Answer' as const, text: answer },
+        })),
+      },
+    ],
+  };
+}
+
 function navigation(): string {
-  return `<nav aria-label="Primary navigation"><ul><li><a href="/">Mission</a></li><li><a href="/developers">Developers</a></li><li><a href="/about">About</a></li><li><a href="/llms.txt">AI overview</a></li></ul></nav>`;
+  return `<nav aria-label="Primary navigation"><ul><li><a href="/">Mission</a></li><li><a href="/developers">Developers</a></li><li><a href="/sandbox">Sandbox</a></li><li><a href="/about">About</a></li><li><a href="/llms.txt">AI overview</a></li></ul></nav>`;
 }
 
 function renderHead(origin: string, path: string, title: string, description: string, structuredData: NexusStructuredData): string {
   const canonicalUrl = `${origin}${path}`;
+  const markdownPath = path === '/' ? '/index.md' : ['/developers', '/about', '/contact', '/privacy', '/sandbox'].includes(path) ? `${path}.md` : '/index.md';
   const structuredDataJson = JSON.stringify(structuredData).replaceAll('<', '\\u003c');
   return `<meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -380,7 +680,7 @@ function renderHead(origin: string, path: string, title: string, description: st
   <meta property="og:image:type" content="image/svg+xml">
   <meta property="og:image:alt" content="NEXUS — intent continuity across providers">
   <link rel="canonical" href="${canonicalUrl}">
-  <link rel="alternate" type="text/markdown" href="${origin}/index.md" title="NEXUS Markdown overview">
+  <link rel="alternate" type="text/markdown" href="${origin}${markdownPath}" title="${title} in Markdown">
   <link rel="ard" type="application/json" href="${origin}/.well-known/ard.json">
   <link rel="agent-skills" type="application/json" href="${origin}/.well-known/agent-skills/index.json">
   <title>${title}</title>
@@ -426,7 +726,7 @@ function renderContentPage(origin: string, structuredData: NexusStructuredData, 
 }
 
 function renderDevelopersHtml(origin: string, structuredData: NexusStructuredData): string {
-  return renderContentPage(origin, structuredData, '/developers', 'Developer guide', 'How the NEXUS WebMCP hero demo preserves independent provider logic, explicit handoff, and human approval.', `<h1>Developer guide</h1>
+  return renderContentPage(origin, createDeveloperStructuredData(origin, structuredData), '/developers', 'Developer guide', 'How the NEXUS WebMCP hero demo preserves independent provider logic, explicit handoff, and human approval.', `<h1>Developer guide</h1>
 <p class="lead">NEXUS is a browser-based WebMCP proof of concept, not a public HTTP API.</p>
 <h2>Architecture</h2>
 <p>The consumer mission dashboard runs at <code>${origin}</code>. OfficePro, TechSupply, FiberMX, NetBusiness, and SecureNow run on independent origins. Each provider registers genuine tools with <code>document.modelContext</code>; provider-owned catalog, pricing, stock, availability, constraints, and validation remain on that provider origin.</p>
@@ -435,15 +735,17 @@ function renderDevelopersHtml(origin: string, structuredData: NexusStructuredDat
 <p>The controlled cross-origin path was validated with Chrome 151+ launched using <code>--enable-features=WebMCP</code>. Provider <code>fromOrigins</code>, tool <code>exposedTo</code>, and iframe <code>allow="tools"</code> restrict exposure to the authorized NEXUS origin. Chrome 151 is not claimed to enable WebMCP by default.</p>
 <p>Read and planning operations may run autonomously after an explicit Intent Handoff. Purchases, reservations, signing, quote acceptance, and installation commitments require a separate, proposal-bound human approval.</p>
 <h2>Local and production usage</h2>
-<p>From the public repository, install with <code>pnpm install --frozen-lockfile</code>, run the six-origin local hero with <code>pnpm demo:hero</code>, and build the production static assets with <code>pnpm build:production</code>. Exact deployment and WebMCP reproduction steps remain versioned with the source.</p>
+<p>From a repository checkout, install with <code>pnpm install --frozen-lockfile</code>, run the six-origin local hero with <code>pnpm demo:hero</code>, and build the production static assets with <code>pnpm build:production</code>. Exact deployment and WebMCP reproduction steps remain versioned with the source. The linked GitHub repository requires access granted by its owner.</p>
+<h2 id="faq">Frequently asked questions</h2>
+<dl>${DEVELOPER_FAQ.map(({ question, answer }) => `<dt><strong>${question}</strong></dt><dd>${answer}</dd>`).join('')}</dl>
 <h2>Maintained references</h2>
-<ul><li><a href="${GITHUB_REPOSITORY}">Public GitHub repository</a></li><li><a href="${GITHUB_REPOSITORY}/blob/main/AGENTS.md">AGENTS.md operating contract</a></li><li><a href="${GITHUB_REPOSITORY}/blob/main/docs/architecture.md">Architecture</a></li><li><a href="${GITHUB_REPOSITORY}/blob/main/docs/webmcp.md">WebMCP validation</a></li><li><a href="${GITHUB_REPOSITORY}/blob/main/docs/deployment.md">Deployment</a></li></ul>`);
+<ul><li><a href="${GITHUB_REPOSITORY}">Source repository (GitHub access required)</a></li><li><a href="${GITHUB_REPOSITORY}/blob/main/AGENTS.md">AGENTS.md operating contract</a></li><li><a href="${GITHUB_REPOSITORY}/blob/main/docs/architecture.md">Architecture</a></li><li><a href="${GITHUB_REPOSITORY}/blob/main/docs/webmcp.md">WebMCP validation</a></li><li><a href="${GITHUB_REPOSITORY}/blob/main/docs/deployment.md">Deployment</a></li></ul>`);
 }
 
 function renderAboutHtml(origin: string, structuredData: NexusStructuredData): string {
   return renderContentPage(origin, structuredData, '/about', 'About', 'About the NEXUS deterministic public hackathon sandbox and its intent-continuity mission.', `<h1>About NEXUS</h1>
 <p class="lead"><strong>Websites end. Human intentions don't.</strong></p>
-<p>NEXUS is an open-source proof of concept maintained by 4040apps. It demonstrates fulfillment, explicit Intent Handoff, recovery and rerouting, human approval, and Goal Complete across independent agent-ready providers. The mission dashboard keeps requirements, budget, deadline, provider assignments, failures, approvals, and the activity timeline visible instead of asking a user to trust chat text alone.</p>
+<p>NEXUS is a proof of concept maintained by 4040apps. It demonstrates fulfillment, explicit Intent Handoff, recovery and rerouting, human approval, and Goal Complete across independent agent-ready providers. The mission dashboard keeps requirements, budget, deadline, provider assignments, failures, approvals, and the activity timeline visible instead of asking a user to trust chat text alone.</p>
 <p>The canonical mission opens an office for 20 people in Guadalajara before 2026-10-01 with a MXN 500,000 budget. OfficePro fulfills desks and chairs before the user authorizes NEXUS to continue the remaining work. TechSupply supplies computers, FiberMX reports an installation date outside the deadline, NetBusiness provides the valid internet reroute, and SecureNow pauses before commitment for explicit human approval.</p>
 <h2>Why the demo is deterministic</h2>
 <p>Provider data and outcomes are synthetic and fixed so the same failure, reroute, approval boundary, final MXN 410,000 cost, and completed mission can be inspected repeatedly. Each provider still owns its own demo catalog and WebMCP execution. NEXUS preserves the shared Goal State and the minimum remaining intent; it does not hide all providers behind a central procurement API.</p>
@@ -454,12 +756,12 @@ function renderAboutHtml(origin: string, structuredData: NexusStructuredData): s
 
 function renderContactHtml(origin: string, structuredData: NexusStructuredData): string {
   return renderContentPage(origin, structuredData, '/contact', 'Contact', 'How to report NEXUS demo defects and discuss the public proof of concept.', `<h1>Contact</h1>
-<p class="lead">NEXUS is maintained publicly by 4040apps.</p>
-<p><a href="${GITHUB_REPOSITORY}/issues">GitHub Issues</a> is the public support and bug-report channel for this hackathon proof of concept. Appropriate reports include reproducible hero-flow failures, incorrect Goal State transitions, WebMCP discovery or permission errors, broken readiness routes, accessibility barriers, documentation mistakes, and production pages that do not match the repository's stated architecture.</p>
+<p class="lead">NEXUS is maintained by 4040apps.</p>
+<p><a href="${GITHUB_REPOSITORY}/issues">GitHub Issues</a> is its support and bug-report channel for repository collaborators. The repository is access-controlled, so the link requires GitHub access granted by its owner; NEXUS does not advertise a separate public or private intake channel. Appropriate reports include reproducible hero-flow failures, incorrect Goal State transitions, WebMCP discovery or permission errors, broken readiness routes, accessibility barriers, documentation mistakes, and production pages that do not match the repository's stated architecture.</p>
 <h2>What to include in a report</h2>
 <p>Describe the page or provider where the problem occurred, the steps needed to reproduce it, the result you expected, and the result you observed. For browser or WebMCP problems, include the browser name and version, whether WebMCP was explicitly enabled, the provider step that failed, and a redacted error message or console excerpt when useful. Include the deployed URL and commit or deployment identifier if they are visible. A minimal repeatable report helps maintainers distinguish an application defect from an unsupported runtime or an origin-permission mismatch.</p>
-<h2>Public channel and sensitive information</h2>
-<p>GitHub Issues are public and may be read, copied, or indexed by others. Do not submit passwords, access tokens, credentials, personal contact details, payment information, confidential supplier terms, real quotes, real availability, real procurement instructions, or any other information that should not be public. Use synthetic demo values when an example is needed. NEXUS has no private support intake, email address, telephone number, or physical support location advertised by this project.</p>
+<h2>Repository channel and sensitive information</h2>
+<p>Issue content may be read or copied by people with repository access and may become public if repository visibility changes. Do not submit passwords, access tokens, credentials, personal contact details, payment information, confidential supplier terms, real quotes, real availability, real procurement instructions, or any other non-public information. Use synthetic demo values when an example is needed. NEXUS has no separate support intake, email address, telephone number, or physical support location advertised by this project.</p>
 <p class="actions"><a href="${GITHUB_REPOSITORY}/issues">Open GitHub Issues</a><a href="${GITHUB_REPOSITORY}">View repository</a></p>`);
 }
 
@@ -470,13 +772,26 @@ function renderPrivacyHtml(origin: string, structuredData: NexusStructuredData):
 <p>The NEXUS demo provides no user accounts, login, authentication service, payment flow, or production datastore. Its office mission, provider catalog examples, prices, availability, deadline conflict, reroute, and approval proposal are deterministic synthetic data used only to demonstrate the hero flow. Mission state runs as browser-demo state and can be returned to the fixed starting point with the reset control.</p>
 <p>The application itself does not intentionally ask for or collect names, email addresses, postal addresses, credentials, payment details, real supplier records, or real procurement requirements. It has no signup form, private message form, checkout, analytics integration, or account profile in the implemented repository. These statements describe the NEXUS application code; they are not a guarantee about every network or browser component outside the application.</p>
 <h2>Hosting and external services</h2>
-<p>The public pages are delivered using Cloudflare infrastructure, and links on this site may open the public GitHub repository. Cloudflare, GitHub, a browser, a network operator, or other infrastructure may process ordinary request metadata such as an IP address, timestamp, user agent, requested URL, or diagnostic logs under their own configurations and policies. NEXUS does not claim to control those independent services or make privacy guarantees on their behalf.</p>
+<p>The public pages are delivered using Cloudflare infrastructure, and links on this site may open an access-controlled GitHub repository. Cloudflare, GitHub, a browser, a network operator, or other infrastructure may process ordinary request metadata such as an IP address, timestamp, user agent, requested URL, or diagnostic logs under their own configurations and policies. NEXUS does not claim to control those independent services or make privacy guarantees on their behalf.</p>
 <h2>What not to submit</h2>
-<p>Do not enter or publish personal information, passwords, tokens, credentials, real payment details, confidential supplier data, real quotes, real availability, or real procurement instructions in this sandbox. Repository questions and defects may be reported through <a href="${GITHUB_REPOSITORY}/issues">GitHub Issues</a>, but those issues are public and may be indexed or copied. Reports must use synthetic examples and must not contain sensitive information.</p>`);
+<p>Do not enter or publish personal information, passwords, tokens, credentials, real payment details, confidential supplier data, real quotes, real availability, or real procurement instructions in this sandbox. Repository questions and defects may be reported through <a href="${GITHUB_REPOSITORY}/issues">GitHub Issues</a> by collaborators with access. Issue content may be copied by collaborators or become public if repository visibility changes. Reports must use synthetic examples and must not contain sensitive information.</p>`);
+}
+
+function renderSandboxHtml(origin: string, structuredData: NexusStructuredData): string {
+  return renderContentPage(origin, structuredData, '/sandbox', 'Public sandbox', 'The runtime, synthetic-data, and commitment boundaries of the canonical deterministic NEXUS production demo.', `<h1>NEXUS public sandbox</h1>
+<p class="lead">The production NEXUS site is itself the public sandbox for the deterministic hackathon hero flow.</p>
+<p>There is no separate API sandbox, credential, account, or production-data environment. The sandbox opens a synthetic office-procurement mission for 20 people in Guadalajara. Fixed provider data makes the partial fulfillment, explicit handoff, deadline failure, internet reroute, human approval, and Goal Complete outcome reproducible.</p>
+<h2>Runtime and data boundaries</h2>
+<p>Genuine cross-origin WebMCP requires Chrome 151+ launched with <code>--enable-features=WebMCP</code>. The normal provider websites remain usable when WebMCP is unavailable, and the UI must not label fallback transport as WebMCP.</p>
+<p>No action creates a real order, reservation, payment, supplier quote, or installation. The mission and provider results are deterministic synthetic data. Do not submit personal, credential, payment, procurement, or confidential supplier information.</p>
+<p class="actions"><a href="/">Open the deterministic mission</a><a href="/developers">Read the developer guide</a><a href="${GITHUB_REPOSITORY}">Inspect the source</a></p>`);
 }
 
 function renderNotFoundHtml(origin: string, structuredData: NexusStructuredData): string {
-  return renderContentPage(origin, structuredData, '/404', 'Not found', 'The requested NEXUS resource was not found.', `<h1>Resource not found</h1><p>The requested path is not part of the maintained NEXUS public sandbox.</p><ul><li><a href="/sitemap.xml">Sitemap</a></li><li><a href="/llms.txt">AI-readable overview</a></li><li><a href="/developers">Developer guide</a></li></ul>`);
+  return renderContentPage(origin, structuredData, '/404', 'Not found', 'The requested NEXUS resource was not found.', `<h1>Resource not found</h1>
+<p><strong>HTTP status: 404.</strong> The requested path is not part of the maintained NEXUS public sandbox. No API-style error contract is implied.</p>
+<p>Agents and people can recover through these canonical resources:</p>
+<ul><li><a href="/index.md">Markdown overview</a></li><li><a href="/sitemap.xml">Sitemap</a></li><li><a href="/llms.txt">AI-readable overview</a></li><li><a href="/developers">Developer guide</a></li><li><a href="/developers.md">Developer guide in Markdown</a></li><li><a href="/sandbox">Public sandbox</a></li></ul>`);
 }
 
 function renderOgImageSvg(): string {
@@ -500,7 +815,14 @@ export function createNexusReadinessSurfaces(config: NexusReadinessConfig): Nexu
     aboutHtml: renderAboutHtml(canonicalOrigin, structuredData),
     contactHtml: renderContactHtml(canonicalOrigin, structuredData),
     privacyHtml: renderPrivacyHtml(canonicalOrigin, structuredData),
+    sandboxHtml: renderSandboxHtml(canonicalOrigin, structuredData),
     indexMarkdown: renderIndexMarkdown(canonicalOrigin),
+    developersMarkdown: renderDevelopersMarkdown(canonicalOrigin),
+    aboutMarkdown: renderAboutMarkdown(canonicalOrigin),
+    contactMarkdown: renderContactMarkdown(canonicalOrigin),
+    privacyMarkdown: renderPrivacyMarkdown(canonicalOrigin),
+    sandboxMarkdown: renderSandboxMarkdown(canonicalOrigin),
+    developersLlmsTxt: renderDevelopersLlmsTxt(canonicalOrigin),
     robotsTxt: renderRobotsTxt(canonicalOrigin),
     sitemapXml: renderSitemapXml(canonicalOrigin),
     llmsTxt: renderLlmsTxt(canonicalOrigin),
@@ -524,7 +846,14 @@ function responseForRoute(route: NexusReadinessRoute, surfaces: NexusReadinessSu
     '/about': surfaces.aboutHtml,
     '/contact': surfaces.contactHtml,
     '/privacy': surfaces.privacyHtml,
+    '/sandbox': surfaces.sandboxHtml,
     '/index.md': surfaces.indexMarkdown,
+    '/developers.md': surfaces.developersMarkdown,
+    '/about.md': surfaces.aboutMarkdown,
+    '/contact.md': surfaces.contactMarkdown,
+    '/privacy.md': surfaces.privacyMarkdown,
+    '/sandbox.md': surfaces.sandboxMarkdown,
+    '/developers/llms.txt': surfaces.developersLlmsTxt,
     '/robots.txt': surfaces.robotsTxt,
     '/sitemap.xml': surfaces.sitemapXml,
     '/llms.txt': surfaces.llmsTxt,
@@ -551,6 +880,16 @@ function isMaintainedExternalDocumentation(url: URL): boolean {
   return url.origin === 'https://github.com' && url.pathname.startsWith('/4040apps/Nexus');
 }
 
+function hasCanonicalFrontmatter(markdown: string, canonicalUrl: string): boolean {
+  const frontmatter = markdown.match(/^---\n(?<fields>.*?)\n---\n/s)?.groups?.fields ?? '';
+  return (
+    frontmatter.includes('title: ') &&
+    frontmatter.includes('description: ') &&
+    frontmatter.includes(`canonical: ${JSON.stringify(canonicalUrl)}`) &&
+    frontmatter.includes(`last-updated: ${JSON.stringify(READINESS_LAST_MODIFIED)}`)
+  );
+}
+
 export function validateNexusReadinessSurfaces(surfaces: NexusReadinessSurfaces): NexusReadinessValidation {
   const errors: string[] = [];
   const expectedOrigin = normalizeCanonicalOrigin(surfaces.canonicalOrigin);
@@ -562,10 +901,32 @@ export function validateNexusReadinessSurfaces(surfaces: NexusReadinessSurfaces)
   if (!surfaces.robotsTxt.startsWith('User-agent: *\nAllow: /\n')) errors.push('robots.txt must contain a valid public crawler policy.');
   if (!surfaces.sitemapXml.startsWith('<?xml version="1.0" encoding="UTF-8"?>') || !surfaces.sitemapXml.includes(`<loc>${escapeXml(`${expectedOrigin}/`)}</loc>`) || !surfaces.sitemapXml.includes(`<lastmod>${READINESS_LAST_MODIFIED}</lastmod>`)) errors.push('sitemap.xml must include canonical maintained pages with last-modified dates.');
 
-  for (const linkedUrl of [...linkedUrls(surfaces.llmsTxt), ...linkedUrls(surfaces.indexMarkdown)]) {
+  const markdownDocuments = [
+    surfaces.llmsTxt,
+    surfaces.indexMarkdown,
+    surfaces.developersMarkdown,
+    surfaces.aboutMarkdown,
+    surfaces.contactMarkdown,
+    surfaces.privacyMarkdown,
+    surfaces.sandboxMarkdown,
+    surfaces.developersLlmsTxt,
+  ];
+  for (const linkedUrl of markdownDocuments.flatMap((document) => linkedUrls(document))) {
     const url = new URL(linkedUrl);
     const internalAvailable = url.origin === expectedOrigin && getNexusReadinessResponse(url.pathname, surfaces).status === 200;
     if (!internalAvailable && !isMaintainedExternalDocumentation(url)) errors.push(`readiness Markdown references an unavailable resource: ${linkedUrl}`);
+  }
+
+  const canonicalMarkdown: ReadonlyArray<readonly [string, string]> = [
+    [surfaces.indexMarkdown, `${expectedOrigin}/`],
+    [surfaces.developersMarkdown, `${expectedOrigin}/developers`],
+    [surfaces.aboutMarkdown, `${expectedOrigin}/about`],
+    [surfaces.contactMarkdown, `${expectedOrigin}/contact`],
+    [surfaces.privacyMarkdown, `${expectedOrigin}/privacy`],
+    [surfaces.sandboxMarkdown, `${expectedOrigin}/sandbox`],
+  ];
+  if (canonicalMarkdown.some(([markdown, canonical]) => !hasCanonicalFrontmatter(markdown, canonical))) {
+    errors.push('Every canonical Markdown document must include truthful maintained frontmatter.');
   }
 
   const application = surfaces.structuredData['@graph'].find((node) => node['@type'] === 'SoftwareApplication');
@@ -573,8 +934,8 @@ export function validateNexusReadinessSurfaces(surfaces: NexusReadinessSurfaces)
   if (application?.url !== `${expectedOrigin}/` || !application.sameAs.includes(GITHUB_REPOSITORY) || organization?.url !== GITHUB_ORGANIZATION) errors.push('Schema.org data must identify the canonical NEXUS application and real 4040apps sources.');
 
   try {
-    const ard = JSON.parse(surfaces.ardJson) as { entries?: Array<Record<string, unknown>> };
-    if (!Array.isArray(ard.entries) || ard.entries.length === 0 || ard.entries.some((entry) => typeof entry.identifier !== 'string' || typeof entry.displayName !== 'string' || typeof entry.type !== 'string' || typeof entry.url !== 'string' || 'data' in entry || !Array.isArray(entry.representativeQueries) || entry.representativeQueries.length < 2 || entry.representativeQueries.length > 5)) errors.push('ARD must contain only complete, reference-based, discoverable resources.');
+    const ard = JSON.parse(surfaces.ardJson) as { specVersion?: string; entries?: Array<Record<string, unknown>> };
+    if (ard.specVersion !== '1.0' || !Array.isArray(ard.entries) || ard.entries.length === 0 || ard.entries.some((entry) => typeof entry.identifier !== 'string' || typeof entry.displayName !== 'string' || typeof entry.type !== 'string' || typeof entry.url !== 'string' || 'data' in entry || !Array.isArray(entry.representativeQueries) || entry.representativeQueries.length < 2 || entry.representativeQueries.length > 5)) errors.push('ARD must declare specVersion 1.0 and contain only complete, reference-based, discoverable resources.');
   } catch {
     errors.push('ARD manifest must be valid JSON.');
   }
@@ -590,6 +951,9 @@ export function validateNexusReadinessSurfaces(surfaces: NexusReadinessSurfaces)
 
   if (!surfaces.html.includes('<main id="main-content" tabindex="-1">') || !/<h1(?:\s|>)/.test(surfaces.html) || !surfaces.html.includes('Public hackathon sandbox.')) errors.push('The NEXUS shell must include its labelled main landmark, level-one heading, and sandbox disclosure.');
   if (!surfaces.html.includes('<link rel="alternate" type="text/markdown"') || !surfaces.html.includes('<meta property="og:image"') || !surfaces.html.includes('<meta property="og:type" content="website">')) errors.push('The NEXUS shell must advertise its canonical Markdown and Open Graph metadata.');
+  if (!surfaces.developersHtml.includes(`${expectedOrigin}/developers.md`) || !surfaces.developersHtml.includes('"@type":"FAQPage"')) {
+    errors.push('The developer guide must advertise its Markdown twin and embed its visible FAQ data.');
+  }
 
   const jsonLdMatch = surfaces.html.match(/<script type="application\/ld\+json">(?<json>.+)<\/script>/);
   try {

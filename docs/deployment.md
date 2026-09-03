@@ -73,10 +73,11 @@ Production permission boundaries are exact:
 - provider iframes retain `allow="tools"`;
 - there is no wildcard exposure and no NEXUS provider proxy.
 
-The deployed NEXUS origin serves substantive `/developers`, `/about`, `/contact`, and
-`/privacy` pages; `/index.md`, `/robots.txt`, `/sitemap.xml`, and `/llms.txt`; a valid ARD
-manifest and integrity-bound Agent Skill under `/.well-known`; canonical/Open Graph
-metadata; semantic HTML; and linked Schema.org JSON-LD using
+The deployed NEXUS origin serves substantive `/developers`, `/about`, `/contact`,
+`/privacy`, and `/sandbox` pages; frontmatter-bearing Markdown twins; `/robots.txt`,
+`/sitemap.xml`, `/llms.txt`, and `/developers/llms.txt`; a versioned ARD manifest and
+integrity-bound Agent Skill under `/.well-known`; canonical/Open Graph metadata; semantic
+HTML; and linked Schema.org JSON-LD using
 `https://nexus.1expert.pro`. Provider pages publish canonical metadata using their own
 production origins. No unimplemented API, auth, MCP-server, A2A, payment, pricing, SDK,
 CLI, or registry surface is advertised.
