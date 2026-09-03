@@ -9,22 +9,26 @@
 
 The first real Ora scan was recorded in the
 [Issue #34 implementation comment](https://github.com/4040apps/Nexus/issues/34#issuecomment-5519205005).
-It is the baseline for this implementation pass.
+After the first truthful implementation pass was deployed, the recorded
+[follow-up scan](https://github.com/4040apps/Nexus/issues/34#issuecomment-5520083380)
+measured 61/100. That is the latest external score and the starting point for this final
+polish; the repository does not infer a score from local checks.
 
 | Measurement | Current evidence | Result |
 | --- | --- | --- |
-| Ora external audit | `npx ax audit https://nexus.1expert.pro --json` | **39/100 (D)** |
-| Ora discovery layer | Same recorded audit | **3/10** |
-| Ora access layer | Same recorded audit | **23/56** |
-| Ora usability layer | Same recorded audit | **25/60** |
-| Ora WebMCP check | Same recorded audit | **PASS, 5/5** |
+| Ora external audit | Recorded follow-up scan | **61/100 (C)**; initial baseline **39/100 (D)** |
+| Ora discovery layer | Recorded follow-up scan | **6/12** |
+| Ora access layer | Recorded follow-up scan | **45/60** |
+| Ora usability layer | Recorded follow-up scan | **33/60** |
+| Ora WebMCP check | Recorded follow-up scan | **PASS, 5/5** |
 | Local readiness contract | Repository tests and `check:readiness` | **PASS** |
 | Lighthouse accessibility | No versioned report has been recorded yet | **PENDING** |
 
-The Ora comment was posted on 2026-09-03 UTC. It does not preserve an observable CLI
-version or a complete scan artifact in the repository, so this document does not invent
-either value. The 39/100 score is external evidence; local validation is not a replacement
-or an inferred rescore.
+The Ora comments were posted on 2026-09-03 UTC. They do not preserve an observable CLI
+version or complete scan artifacts in the repository, so this document does not invent
+either value. The 39/100 baseline and 61/100 follow-up are external evidence; local
+validation is not a replacement or an inferred rescore. No additional force scan was run
+for the final polish documented below.
 
 Ora also surfaced unrelated packages and projects with “Nexus” in their name. The npm
 `nexus` package, PyPI `nexus-cli`, skills.sh `nexus-llm-lang`, and npm
@@ -38,12 +42,15 @@ framework-independent NEXUS readiness handler now maintains these routes:
 | Route | Truthful content |
 | --- | --- |
 | `/` | Accessible mission dashboard, public-sandbox disclosure, canonical and Open Graph metadata, linked JSON-LD, and discovery links |
-| `/developers` | WebMCP architecture, independent provider origins, permission/approval boundaries, local and production usage, and public source links |
+| `/developers` | WebMCP architecture, independent provider origins, permission/approval boundaries, local and production usage, and source links qualified as access-controlled |
 | `/about` | Product thesis, canonical hero mission, and explicit proof-of-concept limits |
 | `/contact` | Public GitHub issue path and a warning not to submit sensitive or real procurement data |
 | `/privacy` | The demo's actual browser-state/data boundaries and hosting qualification |
+| `/sandbox` | Existing deterministic hero-demo scope, controls, synthetic-data boundary, and explicit statement that this is not an API sandbox |
 | `/index.md` | Canonical Markdown representation of the product, mission, safety rules, and maintained resources |
+| `/developers.md`, `/about.md`, `/contact.md`, `/privacy.md`, `/sandbox.md` | Frontmatter-bearing Markdown twins of the corresponding substantive HTML pages |
 | `/llms.txt` | Concrete “When to use NEXUS” guidance, WebMCP/runtime facts, and links to maintained docs and discovery files |
+| `/developers/llms.txt` | Scoped developer context covering the real WebMCP origins, runtime flag, approval boundary, and deliberately absent public API/auth surfaces |
 | `/robots.txt` | Public crawler policy plus canonical sitemap and ARD `Agentmap` references |
 | `/sitemap.xml` | Canonical maintained pages with explicit `lastmod` values |
 | `/.well-known/ard.json` | ARD entries for only the maintained Markdown documentation and real hero skill artifact |
@@ -51,17 +58,24 @@ framework-independent NEXUS readiness handler now maintains these routes:
 | `/.well-known/agent-skills/continue-procurement-mission/SKILL.md` | Installable instructions for the implemented deterministic hero flow and its approval boundaries |
 | `/og-image.svg` | Maintained NEXUS social-preview image referenced by the page metadata |
 
-Unknown routes return an HTML `404` with direct links to the sitemap, `llms.txt`, and
-developer guide. HTML advertises `/index.md` with
+Unknown routes return an HTML `404` with an actual HTTP 404 status, a plain explanation,
+and recovery links to the maintained documentation and sandbox. Each substantive HTML
+page advertises its matching Markdown twin with
 `rel="alternate" type="text/markdown"`; production HTTP `Link` headers advertise that
 representation plus ARD and Agent Skills discovery. The `.well-known` resources are
 CORS-readable and use their required content types.
 
 The JSON-LD graph contains only real `Organization`, `WebSite`, and
-`SoftwareApplication` nodes. It links to the actual
+`SoftwareApplication` nodes, plus a developer-page `FAQPage` whose questions and answers
+are also visible on that page. It links to the actual
 [4040apps organization](https://github.com/4040apps) and
 [NEXUS repository](https://github.com/4040apps/Nexus), and contains no synthetic rating,
 review, readiness score, pricing, or commercial offer.
+
+The repository URL reported by the readiness scan was checked directly through GitHub.
+It is the real `4040apps/Nexus` repository, but it is access-controlled. The link is
+retained as the authoritative source location and the rendered pages qualify that GitHub
+access is required; they do not claim that the source or its Issues are public.
 
 ## Agent Skills and ARD validity
 
@@ -71,7 +85,8 @@ from the exact served `SKILL.md` bytes. The artifact has the required YAML front
 describes how to run the existing hero flow; it does not advertise an API or autonomous
 commitment authority.
 
-The ARD manifest uses an `entries` envelope. Each entry has a domain-anchored identifier,
+The ARD manifest declares published `specVersion` `1.0` and uses an `entries` envelope.
+Each entry has a domain-anchored identifier,
 display name, media type, exactly one URL reference, capabilities, description, and two
 representative queries. It advertises only `/index.md` and the skill artifact. It does not
 pretend NEXUS is an ARD registry or expose registry search endpoints.
@@ -127,23 +142,26 @@ pnpm build:production
 pnpm preflight:production
 ```
 
-The local validator checks every maintained route, canonical identities, sitemap dates,
-Markdown links, JSON-LD linkage, ARD structure, Agent Skills schema/digest agreement,
+The local validator checks every maintained route, canonical identities and Markdown
+frontmatter, sitemap dates, Markdown links, JSON-LD linkage, ARD structure and version,
+Agent Skills schema/digest agreement,
 metadata discovery links, sandbox disclosure, semantic main content, and the helpful 404.
 Production preflight ensures every generated asset exists, contains no localhost or
 insecure production origin, and preserves the Agent Skill digest and CORS/Link headers.
 
 ## Deploy, rescan, and record the outcome
 
-This source change does not claim a new external score. After the PR's immutable commit is
-deployed to the same production domain:
+The latest external result remains 61/100. This final polish does not claim another score
+and must not trigger an Ora force scan. If a normal future measurement is deliberately
+scheduled after the PR's immutable commit is deployed to the same production domain:
 
 1. Verify `/`, all sitemap pages, `/index.md`, `/llms.txt`, both `.well-known` indexes, and
    the linked `SKILL.md` return the expected status and content type.
 2. Run Ora with the same command and preserve the complete JSON output.
 3. Record the deployed commit, Cloudflare deployment ID, final redirected URL, observable
    scanner version, ISO 8601 timestamp, overall score, layer scores, and findings.
-4. Compare against the 39/100 baseline. Do not relabel local checks as an external score.
+4. Compare against the 61/100 latest result and retain the original 39/100 baseline. Do
+   not relabel local checks as an external score.
 5. If the score remains below 95, accept only fixes backed by real implemented behavior;
    document all intentionally absent surfaces instead of fabricating them.
 

@@ -10,6 +10,7 @@ import {
 } from './readiness.js';
 
 const TEST_ORIGIN = 'https://nexus.example.org';
+const TEST_REPOSITORY = 'https://github.com/4040apps/Nexus';
 const HERO_SKILL_PATH = '/.well-known/agent-skills/continue-procurement-mission/SKILL.md';
 
 function visibleArticleText(html: string): string {
@@ -80,9 +81,10 @@ describe('NEXUS agent-readiness surfaces', () => {
   });
 
   it('publishes useful Markdown aligned with the real architecture and sandbox', () => {
-    const { indexMarkdown, llmsTxt } = createNexusReadinessSurfaces({
+    const surfaces = createNexusReadinessSurfaces({
       canonicalOrigin: TEST_ORIGIN,
     });
+    const { indexMarkdown, llmsTxt } = surfaces;
 
     expect(llmsTxt).toContain('## When to use NEXUS');
     expect(llmsTxt).toContain('deterministic public hackathon sandbox');
@@ -95,16 +97,63 @@ describe('NEXUS agent-readiness surfaces', () => {
     expect(llmsTxt).toContain('/blob/main/AGENTS.md');
     expect(indexMarkdown).toContain('not a production procurement or payment system');
     expect(indexMarkdown).toContain(`${TEST_ORIGIN}/developers`);
+    expect(llmsTxt).toContain(`${TEST_ORIGIN}/developers/llms.txt`);
+    expect(llmsTxt).toContain(`${TEST_ORIGIN}/sandbox`);
     expect(llmsTxt).not.toContain('/openapi.json');
     expect(llmsTxt).not.toContain('navigator.modelContext');
+
+    const markdownTwins = [
+      ['/index.md', surfaces.indexMarkdown, `${TEST_ORIGIN}/`],
+      ['/developers.md', surfaces.developersMarkdown, `${TEST_ORIGIN}/developers`],
+      ['/about.md', surfaces.aboutMarkdown, `${TEST_ORIGIN}/about`],
+      ['/contact.md', surfaces.contactMarkdown, `${TEST_ORIGIN}/contact`],
+      ['/privacy.md', surfaces.privacyMarkdown, `${TEST_ORIGIN}/privacy`],
+      ['/sandbox.md', surfaces.sandboxMarkdown, `${TEST_ORIGIN}/sandbox`],
+    ] as const;
+    for (const [path, markdown, canonical] of markdownTwins) {
+      expect(getNexusReadinessResponse(path, surfaces).headers['content-type']).toContain(
+        'text/markdown',
+      );
+      expect(markdown).toMatch(/^---\ntitle: /);
+      expect(markdown).toContain('description: ');
+      expect(markdown).toContain(`canonical: "${canonical}"`);
+      expect(markdown).toContain('last-updated: "2026-09-03"');
+    }
+
+    expect(surfaces.developersMarkdown).toContain('NEXUS is a browser-based WebMCP proof of concept, not a public HTTP API.');
+    expect(surfaces.aboutMarkdown).toContain('Why the demo is deterministic');
+    expect(surfaces.contactMarkdown).toContain('What to include in a report');
+    expect(surfaces.privacyMarkdown).toContain('Hosting and external services');
+    expect(surfaces.contactMarkdown).toContain('repository is access-controlled');
+    expect(surfaces.contactMarkdown).not.toContain('GitHub Issues are public');
+  });
+
+  it('publishes scoped developer context without inventing API or auth surfaces', () => {
+    const surfaces = createNexusReadinessSurfaces({ canonicalOrigin: TEST_ORIGIN });
+    const scoped = surfaces.developersLlmsTxt;
+
+    expect(scoped).toContain('not a public HTTP API');
+    expect(scoped).toContain('document.modelContext');
+    expect(scoped).toContain('Chrome 151+');
+    expect(scoped).toContain('--enable-features=WebMCP');
+    expect(scoped).toContain('https://officepro.1expert.pro');
+    expect(scoped).toContain('https://securenow.1expert.pro');
+    expect(scoped).toContain('proposal-bound human approval');
+    expect(scoped).toContain('pnpm demo:hero');
+    expect(scoped).toContain(TEST_REPOSITORY);
+    expect(scoped).toContain('no REST or GraphQL API, OpenAPI document, OAuth or OIDC service');
+    expect(scoped).not.toContain('/openapi.json');
+    expect(scoped).not.toContain('/oauth');
   });
 
   it('publishes a complete ARD manifest for only maintained documentation and skill resources', () => {
     const { ardJson } = createNexusReadinessSurfaces({ canonicalOrigin: TEST_ORIGIN });
     const manifest = JSON.parse(ardJson) as {
+      specVersion: string;
       entries: Array<Record<string, unknown>>;
     };
 
+    expect(manifest.specVersion).toBe('1.0');
     expect(manifest.entries).toHaveLength(2);
     expect(manifest.entries.map((entry) => entry.type)).toEqual([
       'text/markdown',
@@ -167,6 +216,18 @@ describe('NEXUS agent-readiness surfaces', () => {
     expect(JSON.stringify(surfaces)).not.toMatch(
       /readinessScore|lighthouseScore|externalScore/,
     );
+
+    const developerScript = surfaces.developersHtml.match(
+      /<script type="application\/ld\+json">(?<json>.+)<\/script>/,
+    );
+    const developerData = JSON.parse(developerScript?.groups?.json ?? '{}') as {
+      '@graph': Array<Record<string, unknown>>;
+    };
+    const faq = developerData['@graph'].find((node) => node['@type'] === 'FAQPage');
+    expect(faq).toMatchObject({ '@id': `${TEST_ORIGIN}/developers#faq` });
+    expect(faq?.mainEntity).toHaveLength(3);
+    expect(surfaces.developersHtml).toContain('Is NEXUS a public HTTP API?');
+    expect(surfaces.developersHtml).not.toMatch(/aggregateRating|review|offers/);
   });
 
   it('renders semantic pages, metadata, a sandbox disclosure, and an agent-friendly 404', () => {
@@ -189,11 +250,17 @@ describe('NEXUS agent-readiness surfaces', () => {
     expect(surfaces.aboutHtml).toContain('What this is not');
     expect(surfaces.privacyHtml).toContain('Use synthetic information only');
     expect(surfaces.contactHtml).toContain('/issues');
+    expect(surfaces.sandboxHtml).toContain('production NEXUS site is itself the public sandbox');
+    expect(surfaces.sandboxHtml).toContain('no separate API sandbox');
+    expect(surfaces.sandboxHtml).toContain(`${TEST_ORIGIN}/sandbox.md`);
     expect(notFound.status).toBe(404);
     expect(notFound.headers['content-type']).toContain('text/html');
     expect(notFound.body).toContain('/sitemap.xml');
     expect(notFound.body).toContain('/llms.txt');
     expect(notFound.body).toContain('/developers');
+    expect(notFound.body).toContain('HTTP status: 404');
+    expect(notFound.body).toContain('/index.md');
+    expect(notFound.body).toContain('/sandbox');
     expect(surfaces.html).toContain('a:focus-visible');
   });
 
@@ -210,10 +277,11 @@ describe('NEXUS agent-readiness surfaces', () => {
     }
 
     const contact = visibleArticleText(surfaces.contactHtml);
-    expect(contact).toContain('maintained publicly by 4040apps');
-    expect(contact).toContain('GitHub Issues is the public support and bug-report channel');
+    expect(contact).toContain('maintained by 4040apps');
+    expect(contact).toContain('support and bug-report channel for repository collaborators');
+    expect(contact).toContain('repository is access-controlled');
     expect(contact).toContain('steps needed to reproduce it');
-    expect(contact).toContain('GitHub Issues are public');
+    expect(contact).toContain('may become public if repository visibility changes');
     expect(contact).toContain('Do not submit passwords, access tokens, credentials');
 
     const privacy = visibleArticleText(surfaces.privacyHtml);
@@ -221,7 +289,7 @@ describe('NEXUS agent-readiness surfaces', () => {
     expect(privacy).toContain('deterministic synthetic data');
     expect(privacy).toContain('does not intentionally ask for or collect');
     expect(privacy).toContain('Cloudflare, GitHub, a browser, a network operator');
-    expect(privacy).toContain('GitHub Issues, but those issues are public');
+    expect(privacy).toContain('GitHub Issues by collaborators with access');
   });
 
   it('validates the complete graph and detects a broken advertised endpoint', () => {

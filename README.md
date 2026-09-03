@@ -150,10 +150,11 @@ pnpm --filter @nexus/app-nexus check:readiness -- https://nexus.your-domain.exam
 ```
 
 The first Ora audit of `https://nexus.1expert.pro` established a real **39/100 (D)**
-baseline while its WebMCP check passed **5/5**. Issue #34 implements the documented
-truthful follow-up only; a new external score is not claimed until those assets are
-deployed and rescanned. Lighthouse remains pending. The evidence policy, accessibility
-checklist, deliberately absent surfaces, and deploy/scan/fix/rescan workflow are in
+baseline. The recorded post-deployment follow-up measured **61/100 (C)**, with WebMCP
+still passing **5/5**. Issue #34's final polish adds only truthful maintained surfaces;
+it does not claim another external score, and no Ora force scan is part of this change.
+Lighthouse remains pending. The evidence policy, accessibility checklist, deliberately
+absent surfaces, and measurement history are in
 [`docs/agent-readiness.md`](docs/agent-readiness.md#targets-and-measured-baseline).
 
 ## Cloudflare production deployment
