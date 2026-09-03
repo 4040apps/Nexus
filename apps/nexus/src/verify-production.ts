@@ -10,7 +10,7 @@ export async function runProductionVerification(): Promise<void> {
     process.stdout.write(`${failed ? '✗' : '✓'} ${origin}\n`);
   }
   if (!result.valid) throw new Error(result.errors.join('\n'));
-  process.stdout.write('\nReadiness routes: robots.txt, sitemap.xml, llms.txt ✓\n');
+  process.stdout.write('\nReadiness routes: docs, Markdown, ARD, Agent Skills, metadata, and crawler surfaces ✓\n');
 }
 
 const isMain = process.argv[1]?.endsWith('/verify-production.js') === true;

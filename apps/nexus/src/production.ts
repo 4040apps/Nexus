@@ -19,7 +19,20 @@ export type ProductionVerification = {
   errors: readonly string[];
 };
 
-export const PRODUCTION_READINESS_PATHS = ['/robots.txt', '/sitemap.xml', '/llms.txt'] as const;
+export const PRODUCTION_READINESS_PATHS = [
+  '/developers',
+  '/about',
+  '/contact',
+  '/privacy',
+  '/index.md',
+  '/robots.txt',
+  '/sitemap.xml',
+  '/llms.txt',
+  '/.well-known/ard.json',
+  '/.well-known/agent-skills/index.json',
+  '/.well-known/agent-skills/continue-procurement-mission/SKILL.md',
+  '/og-image.svg',
+] as const;
 
 export function createProductionDeployment(): ProductionDeployment {
   const providerExposedTo: ProductionDeployment['providerExposedTo'] = {

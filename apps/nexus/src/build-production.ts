@@ -21,12 +21,33 @@ export async function buildProductionAssets(repositoryRoot: string): Promise<voi
     goalState: createHeroDashboardStates().initial,
     officeProRuntime: { providerOrigin: PRODUCTION_ORIGINS.officepro },
   });
+  const nexusAssets: Readonly<Record<string, string>> = {
+    'index.html': surfaces.html,
+    'developers/index.html': surfaces.developersHtml,
+    'about/index.html': surfaces.aboutHtml,
+    'contact/index.html': surfaces.contactHtml,
+    'privacy/index.html': surfaces.privacyHtml,
+    '404.html': surfaces.notFoundHtml,
+    'index.md': surfaces.indexMarkdown,
+    'robots.txt': surfaces.robotsTxt,
+    'sitemap.xml': surfaces.sitemapXml,
+    'llms.txt': surfaces.llmsTxt,
+    '.well-known/ard.json': surfaces.ardJson,
+    '.well-known/agent-skills/index.json': surfaces.agentSkillsIndexJson,
+    '.well-known/agent-skills/continue-procurement-mission/SKILL.md':
+      surfaces.heroSkillMarkdown,
+    'og-image.svg': surfaces.ogImageSvg,
+    _headers: nexusStaticHeaders(PRODUCTION_ORIGINS.nexus),
+  };
+  await Promise.all(
+    Object.keys(nexusAssets).map((relativePath) =>
+      mkdir(dirname(resolve(nexusDirectory, relativePath)), { recursive: true }),
+    ),
+  );
   await Promise.all([
-    writeFile(resolve(nexusDirectory, 'index.html'), surfaces.html),
-    writeFile(resolve(nexusDirectory, 'robots.txt'), surfaces.robotsTxt),
-    writeFile(resolve(nexusDirectory, 'sitemap.xml'), surfaces.sitemapXml),
-    writeFile(resolve(nexusDirectory, 'llms.txt'), surfaces.llmsTxt),
-    writeFile(resolve(nexusDirectory, '_headers'), staticHeaders()),
+    ...Object.entries(nexusAssets).map(([relativePath, contents]) =>
+      writeFile(resolve(nexusDirectory, relativePath), contents),
+    ),
     copyFile(
       resolve(repositoryRoot, 'apps/nexus/dist/officepro-runtime-client.js'),
       resolve(nexusDirectory, 'officepro-runtime-client.js'),
@@ -53,6 +74,18 @@ export async function buildProductionAssets(repositoryRoot: string): Promise<voi
 
 function staticHeaders(): string {
   return `/*\n  Cache-Control: no-store\n  Origin-Agent-Cluster: ?1\n`;
+}
+
+function nexusStaticHeaders(origin: string): string {
+  return `/*
+  Cache-Control: no-store
+  Origin-Agent-Cluster: ?1
+  Link: <${origin}/index.md>; rel="alternate"; type="text/markdown", <${origin}/.well-known/ard.json>; rel="ard"; type="application/json", <${origin}/.well-known/agent-skills/index.json>; rel="agent-skills"; type="application/json"
+  X-Content-Type-Options: nosniff
+
+/.well-known/*
+  Access-Control-Allow-Origin: *
+`;
 }
 
 function providerRobots(origin: string): string {

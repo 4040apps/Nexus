@@ -34,7 +34,7 @@ pnpm build:production
 # Deploy all six static-asset Workers (explicit; never run by pnpm build)
 pnpm deploy:production
 
-# Check all six exact public origins plus NEXUS robots.txt, sitemap.xml, and llms.txt
+# Check all six exact public origins plus every maintained NEXUS readiness route
 pnpm verify:production
 ```
 
@@ -73,10 +73,13 @@ Production permission boundaries are exact:
 - provider iframes retain `allow="tools"`;
 - there is no wildcard exposure and no NEXUS provider proxy.
 
-The deployed NEXUS origin serves `/robots.txt`, `/sitemap.xml`, `/llms.txt`, canonical
-HTML metadata, semantic HTML, and Schema.org JSON-LD using
+The deployed NEXUS origin serves substantive `/developers`, `/about`, `/contact`, and
+`/privacy` pages; `/index.md`, `/robots.txt`, `/sitemap.xml`, and `/llms.txt`; a valid ARD
+manifest and integrity-bound Agent Skill under `/.well-known`; canonical/Open Graph
+metadata; semantic HTML; and linked Schema.org JSON-LD using
 `https://nexus.1expert.pro`. Provider pages publish canonical metadata using their own
-production origins. No unimplemented well-known or API surface is advertised.
+production origins. No unimplemented API, auth, MCP-server, A2A, payment, pricing, SDK,
+CLI, or registry surface is advertised.
 
 ## Failure behavior
 

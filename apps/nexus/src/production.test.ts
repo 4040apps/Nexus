@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { PRODUCTION_ORIGINS } from '@nexus/environment';
 
 import {
+  PRODUCTION_READINESS_PATHS,
   PROVIDER_SITES,
   assertProductionDeployment,
   createProductionDeployment,
@@ -42,8 +43,9 @@ describe('production deployment contract', () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('ok', { status: 200 }));
     const result = await verifyProductionOrigins(fetcher);
     expect(result.valid).toBe(true);
-    expect(result.checkedUrls).toHaveLength(9);
-    expect(fetcher).toHaveBeenCalledTimes(9);
+    const expectedCount = Object.keys(PRODUCTION_ORIGINS).length + PRODUCTION_READINESS_PATHS.length;
+    expect(result.checkedUrls).toHaveLength(expectedCount);
+    expect(fetcher).toHaveBeenCalledTimes(expectedCount);
   });
 
   it('returns a failed verification for an unavailable required origin', async () => {

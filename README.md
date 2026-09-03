@@ -139,19 +139,22 @@ authorized consumer on port 4100, the independent provider on port 4200, and an 
 negative control on port 4300. Exact browser requirements and validated results are in
 [`docs/webmcp.md`](docs/webmcp.md#issue-6-spike-result-cross-origin-validated).
 
-The NEXUS package also provides real `robots.txt`, `sitemap.xml`, `llms.txt`, Schema.org,
-and accessible shell contracts for a configurable deployment origin. Validate them locally
-after building the package:
+The NEXUS package provides maintained `robots.txt`, dated `sitemap.xml`, `llms.txt`,
+canonical Markdown, ARD and Agent Skills discovery, linked Schema.org/Open Graph metadata,
+substantive public docs, and accessible shell contracts for a configurable deployment
+origin. Validate them locally after building the package:
 
 ```bash
 pnpm --filter @nexus/app-nexus build
 pnpm --filter @nexus/app-nexus check:readiness -- https://nexus.your-domain.example
 ```
 
-The external scan and Lighthouse scores remain pending until a public NEXUS deployment is
-actually measured. The evidence policy, accessibility checklist, deferred surfaces, and
-deploy/scan/fix/rescan workflow are in
-[`docs/agent-readiness.md`](docs/agent-readiness.md#targets-and-evidence-status).
+The first Ora audit of `https://nexus.1expert.pro` established a real **39/100 (D)**
+baseline while its WebMCP check passed **5/5**. Issue #34 implements the documented
+truthful follow-up only; a new external score is not claimed until those assets are
+deployed and rescanned. Lighthouse remains pending. The evidence policy, accessibility
+checklist, deliberately absent surfaces, and deploy/scan/fix/rescan workflow are in
+[`docs/agent-readiness.md`](docs/agent-readiness.md#targets-and-measured-baseline).
 
 ## Cloudflare production deployment
 
