@@ -1,3 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it, vi } from 'vitest';
 import { PRODUCTION_ORIGINS } from '@nexus/environment';
 
@@ -11,6 +15,25 @@ import {
 } from './production.js';
 
 describe('production deployment contract', () => {
+  it('keeps NEXUS directory pages canonical and serves the generated 404 page', () => {
+    const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+    const wranglerConfig = JSON.parse(
+      readFileSync(resolve(repositoryRoot, 'cloudflare/nexus/wrangler.jsonc'), 'utf8'),
+    ) as {
+      assets?: {
+        directory?: string;
+        html_handling?: string;
+        not_found_handling?: string;
+      };
+    };
+
+    expect(wranglerConfig.assets).toEqual({
+      directory: '../../dist/cloudflare/nexus',
+      html_handling: 'drop-trailing-slash',
+      not_found_handling: '404-page',
+    });
+  });
+
   it('uses exact exposedTo and fromOrigins boundaries without wildcards', () => {
     const deployment = createProductionDeployment();
     expect(() => assertProductionDeployment(deployment)).not.toThrow();
